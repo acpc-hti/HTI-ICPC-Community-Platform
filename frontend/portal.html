@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة الطلاب ومتابعة القبول | HTI ICPC Community</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="assets/img/hti-icpc-logo.jpg">
+  <link rel="apple-touch-icon" href="assets/img/hti-icpc-logo.jpg">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    if (localStorage.getItem('hti_member_token') || sessionStorage.getItem('hti_member_token')) {
+      document.write('<style>#login-view{display:none!important;}#dashboard-view{display:block!important;}</style>');
+    }
+  </script>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <div class="brand-text-group">
+          <span class="brand-title">HTI <span class="brand-highlight">ICPC</span></span>
+          <span class="brand-subtitle">MEMBER PORTAL</span>
+        </div>
+      </a>
+      
+      <!-- Right-side controls (in RTL, ms-auto places them on left/end) -->
+      <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
+        
+        <!-- Back to Public Site -->
+        <a href="index.html" class="nav-home-pill" id="public-home-link" title="الرجوع إلى الموقع الرئيسي">
+          <i class="fa-solid fa-house"></i>
+          <span class="d-none d-md-inline">الموقع الرئيسي</span>
+        </a>
+
+        <!-- Authenticated Student Profile & Logout Group -->
+        <div class="d-flex align-items-center gap-2" id="member-user-profile" style="display: none !important;">
+          <!-- Student Profile Pill Button -->
+          <button type="button" class="admin-profile-pill" data-bs-toggle="modal" data-bs-target="#editProfileModal" title="عرض وتعديل ملفي الشخصي">
+            <div class="admin-avatar-circle" style="background: linear-gradient(135deg, #10b981, #3b82f6);">
+              <i class="fa-solid fa-user-graduate"></i>
+            </div>
+            <div class="d-none d-sm-block text-start">
+              <div class="admin-pill-name" id="member-nav-name">Student</div>
+              <div class="admin-pill-role" style="color: #34d399;" id="member-nav-id">2026-HTI</div>
+            </div>
+            <i class="fa-solid fa-user-pen admin-gear-icon ms-1" style="color: #34d399;"></i>
+          </button>
+
+          <!-- Logout Button -->
+          <button type="button" class="admin-logout-pill" id="logout-btn" onclick="logoutMember()" title="تسجيل الخروج">
+            <i class="fa-solid fa-power-off"></i>
+            <span class="d-none d-sm-inline">خروج</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Immediate Member Profile & Logout Sync (0ms) -->
+  <script>
+    (function() {
+      try {
+        var mStr = localStorage.getItem('hti_member_user') || sessionStorage.getItem('hti_member_user');
+        if (mStr) {
+          var member = JSON.parse(mStr);
+          var prof = document.getElementById('member-user-profile');
+          var nameEl = document.getElementById('member-nav-name');
+          var idEl = document.getElementById('member-nav-id');
+          if (prof) prof.style.setProperty('display', 'flex', 'important');
+          if (nameEl) nameEl.textContent = member.fullName || 'Student';
+          if (idEl) idEl.textContent = member.studentId || '';
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Main Container -->
+  <main class="py-5">
+    <div class="container">
+
+      <!-- Login View (Shown when not authenticated) -->
+      <div id="login-view" class="mx-auto" style="max-width: 500px;">
+        <div class="text-center mb-4">
+          <div class="mb-2">
+            <img src="assets/img/hti-icpc-logo.jpg" alt="Official HTI ACPC Logo" class="footer-logo mb-2" style="height: 70px; width: 70px; border-radius: 14px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);">
+          </div>
+          <h1 class="h3 fw-bold text-white mb-2">بوابة الطلاب والمتابعة – Student Portal</h1>
+          <p class="text-secondary small">سجّل دخولك بالبريد الإلكتروني الذي سجّلت به، وكلمة المرور هي رقم كارنيهك الجامعي تلقائياً.</p>
+        </div>
+
+        <div id="login-alert" class="alert d-none mb-3" role="alert"></div>
+
+        <div class="custom-card card-gradient-top p-4">
+          <form id="member-login-form">
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label">البريد الإلكتروني – Email</label>
+              <input type="email" class="form-control ltr-input" id="loginEmail" placeholder="name@hti.edu.eg" required>
+            </div>
+            <div class="mb-4">
+              <label for="loginStudentId" class="form-label">رقم الكارنيه – Student ID <span class="text-muted small">(كلمة المرور)</span></label>
+              <div class="input-group">
+                <input type="password" class="form-control ltr-input font-mono" id="loginStudentId" placeholder="20230114" required>
+                <button class="btn btn-outline-secondary" type="button" id="toggle-pwd-btn">
+                  <i class="fa-solid fa-eye" id="eye-icon"></i>
+                </button>
+              </div>
+              <div class="form-text text-muted small">كلمة المرور هي رقم كارنيهك الجامعي (Student ID) الذي سجّلته في الاستمارة.</div>
+            </div>
+            <button type="submit" class="btn-primary-custom w-100 py-2" id="member-login-btn">
+              <span id="login-btn-text"><i class="fa-solid fa-right-to-bracket ms-1"></i> تسجيل الدخول لحسابي – Sign In</span>
+              <span id="login-btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+          </form>
+
+          <div class="mt-4 pt-3 border-top border-secondary border-opacity-25 text-center">
+            <p class="text-muted small mb-2">لسه ما سجلتش استمارة الانضمام؟</p>
+            <a href="apply.html" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-paper-plane ms-1"></i> تقديم استمارة جديدة وإنشاء حساب</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard View (Shown when authenticated) -->
+      <div id="dashboard-view" class="d-none">
+
+        <!-- Real-Time Application Status Card -->
+        <div id="portal-status-card" class="custom-card p-4 p-md-4 mb-4">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pb-3 border-bottom border-secondary border-opacity-25">
+            <div class="d-flex align-items-center gap-3">
+              <div id="status-icon-box" class="rounded-3 d-flex align-items-center justify-content-center p-3" style="width: 52px; height: 52px; font-size: 1.5rem; background: rgba(59, 130, 246, 0.15);">
+                <i id="status-icon" class="fa-solid fa-hourglass-half text-warning"></i>
+              </div>
+              <div>
+                <span class="text-secondary small fw-bold text-uppercase d-block mb-1">موقف الطلب الحالي – Application Status</span>
+                <h2 class="h5 fw-bold text-white mb-0" id="status-headline">طلبك قيد المراجعة والتدقيق</h2>
+              </div>
+            </div>
+            <div>
+              <span id="status-badge" class="badge px-3 py-2 fs-6 bg-warning bg-opacity-25 text-warning border border-warning border-opacity-25">قيد المراجعة – Pending</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <p id="status-desc" class="text-light text-opacity-90 mb-3" style="line-height: 1.8;">
+              تم استلام استمارتك بنجاح. تقوم لجنة الكوميونيتي حالياً بمراجعة بياناتك وخبراتك لتسكينك في المستوى التدريبي المناسب.
+            </p>
+            <!-- Tracking Progress Stepper -->
+            <div id="status-stepper" class="d-flex justify-content-between align-items-center position-relative my-3 pt-2">
+              <div class="step-item text-center flex-fill position-relative">
+                <div class="step-circle completed mx-auto mb-1"><i class="fa-solid fa-check"></i></div>
+                <div class="step-label text-success small fw-bold">1. تقديم الاستمارة</div>
+              </div>
+              <div class="step-line flex-fill" id="step-line-1"></div>
+              <div class="step-item text-center flex-fill position-relative">
+                <div class="step-circle active mx-auto mb-1" id="step-circle-2"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div class="step-label small fw-bold text-warning" id="step-label-2">2. فحص وتقييم البيانات</div>
+              </div>
+              <div class="step-line flex-fill" id="step-line-2"></div>
+              <div class="step-item text-center flex-fill position-relative">
+                <div class="step-circle mx-auto mb-1" id="step-circle-3"><i class="fa-solid fa-trophy"></i></div>
+                <div class="step-label small text-muted fw-bold" id="step-label-3">3. اعتماد القبول والمستوى</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Welcome Hero -->
+        <div class="custom-card card-gradient-top p-4 p-md-5 mb-4">
+          <div class="row align-items-center g-3">
+            <div class="col-lg-8">
+              <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                <span class="badge px-3 py-1" id="hero-status-pill">
+                  <i class="fa-solid fa-circle-info ms-1"></i> <span id="hero-status-text">حساب متقدم</span>
+                </span>
+                <span class="badge bg-primary px-3 py-1 tech-term" id="disp-assigned-level">Level 0</span>
+                <span class="badge bg-info bg-opacity-25 text-info px-3 py-1" id="disp-current-phase"><i class="fa-solid fa-stairs ms-1"></i>المرحلة 1</span>
+              </div>
+              <h1 class="h2 fw-bold text-white mb-2">أهلاً بك، <span id="disp-member-name">Student</span>!</h1>
+              <p class="text-secondary mb-0">
+                رقم الكارنيه: <strong class="text-white font-mono" id="disp-student-id"></strong> &bull; 
+                القسم: <span class="text-light" id="disp-dept"></span> &bull; 
+                الفرقة: <span class="text-light" id="disp-year"></span>
+              </p>
+            </div>
+            <div class="col-lg-4 text-lg-start">
+              <div class="d-flex flex-column flex-sm-row justify-content-lg-start gap-2" id="member-action-buttons">
+                <a href="#" id="link-whatsapp" target="_blank" class="btn btn-success d-inline-flex align-items-center justify-content-center gap-2">
+                  <i class="fa-brands fa-whatsapp fa-lg"></i> جروب الواتساب الرسمي
+                </a>
+                <a href="#" id="link-discord" target="_blank" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-2">
+                  <i class="fa-brands fa-discord fa-lg"></i> سيرفر Discord
+                </a>
+              </div>
+              <div id="unapproved-lock-notice" class="d-none mt-2">
+                <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25 small">
+                  <i class="fa-solid fa-lock ms-1"></i> روابط الجروبات تُفتح فور اعتماد القبول
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Training & Elimination Phase Progress Card -->
+        <div class="custom-card mb-4 p-4 border-start border-4" id="phase-banner-card" style="border-left-color: var(--primary-accent) !important;">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-warning bg-opacity-25 text-warning px-3 py-1 fw-bold fs-6" id="disp-phase-tag">
+                <i class="fa-solid fa-stairs ms-1"></i> <span id="disp-phase-name">المرحلة 1</span>
+              </span>
+              <span id="disp-phase-status-badge" class="badge bg-primary bg-opacity-25 text-primary px-3 py-1">
+                ⏳ جاري حضور المحاضرات والتدريب
+              </span>
+            </div>
+            <div id="disp-phase-score-container" class="d-none">
+              <span class="badge bg-success bg-opacity-25 text-success font-mono px-3 py-1" id="disp-phase-score">السكور: -</span>
+            </div>
+          </div>
+          <p class="text-light text-opacity-90 mb-0 small" id="disp-phase-message" style="line-height: 1.8;">
+            أنت مسجل حالياً في المرحلة الأولى. احرص على حضور المحاضرات الأسبوعية وحل مسائل الشيتات للاستعداد لامتحان التصفية القادم.
+          </p>
+          <div id="disp-phase-notes-container" class="d-none mt-2 pt-2 border-top border-light border-opacity-10 small text-warning">
+            <i class="fa-solid fa-comment-dots ms-1"></i> <strong>ملاحظة من المدرب:</strong> <span id="disp-phase-notes">-</span>
+          </div>
+        </div>
+
+        <!-- 3-Column Layout -->
+        <div class="row g-4">
+          
+          <!-- Left: Training Sessions & Contests -->
+          <div class="col-lg-8">
+            
+            <!-- Upcoming Training Sessions -->
+            <div class="custom-card mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 fw-bold text-white mb-0">
+                  <i class="fa-solid fa-chalkboard-user text-primary ms-2"></i> السيشنات التدريبية القادمة – Training Sessions
+                </h3>
+                <span class="badge bg-primary bg-opacity-25 text-primary">جدول الدفعة</span>
+              </div>
+              <div id="portal-trainings" class="vstack gap-3">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Upcoming Contests -->
+            <div class="custom-card mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 fw-bold text-white mb-0">
+                  <i class="fa-solid fa-trophy text-warning ms-2"></i> المسابقات والمعسكرات – Contests & Bootcamps
+                </h3>
+                <span class="badge bg-warning bg-opacity-25 text-warning tech-term">Official & Gyms</span>
+              </div>
+              <div id="portal-events" class="vstack gap-3">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Community Announcements -->
+            <div class="custom-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 fw-bold text-white mb-0">
+                  <i class="fa-solid fa-bullhorn text-info ms-2"></i> إعلانات وتنبيهات الأعضاء – Announcements
+                </h3>
+              </div>
+              <div id="portal-announcements" class="vstack gap-3">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right: Resources & Member Info -->
+          <div class="col-lg-4">
+            
+            <!-- Curated Learning Resources -->
+            <div class="custom-card mb-4">
+              <h3 class="h5 fw-bold text-white mb-3">
+                <i class="fa-solid fa-book-bookmark text-success ms-2"></i> مسارات ومناهج التعلم – Curricula
+              </h3>
+              <div class="vstack gap-2" id="portal-resources">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Member Profile Card -->
+            <!-- Member Profile Card -->
+            <div class="custom-card mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 fw-bold text-white mb-0">
+                  <i class="fa-solid fa-id-card text-primary ms-2"></i> بيانات البروفايل – Profile
+                </h3>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal" id="btn-open-edit-profile">
+                  <i class="fa-solid fa-user-pen ms-1"></i> تعديل بياناتي
+                </button>
+              </div>
+              <ul class="list-unstyled mb-0 small">
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">رقم الطلب – App ID:</span>
+                  <strong class="text-info font-mono" id="disp-app-id">-</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">رقم الكارنيه – Student ID:</span>
+                  <strong class="text-white font-mono" id="disp-side-student-id">-</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">رقم الهاتف (واتساب):</span>
+                  <strong class="text-white font-mono" id="disp-phone">-</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">يوزر Codeforces:</span>
+                  <strong class="text-warning font-mono" id="disp-cf-handle">غير مربوط</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">بروفايل LeetCode:</span>
+                  <strong class="text-info font-mono" id="disp-leetcode">غير مربوط</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">بروفايل GitHub:</span>
+                  <strong class="text-light font-mono" id="disp-github">غير مربوط</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">سيرفر Discord:</span>
+                  <strong class="text-primary font-mono" id="disp-discord">غير مربوط</strong>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">اللغة الأساسية:</span>
+                  <span class="badge bg-primary bg-opacity-25 text-primary tech-term" id="disp-lang">C++</span>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">حالة الحساب – Status:</span>
+                  <span id="disp-side-status" class="badge bg-warning bg-opacity-25 text-warning">قيد المراجعة</span>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">المرحلة الحالية:</span>
+                  <span class="badge bg-info bg-opacity-25 text-info" id="disp-profile-phase">المرحلة 1</span>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">حالة التصفية:</span>
+                  <span class="badge bg-primary bg-opacity-25 text-primary" id="disp-profile-phase-status">مستمر</span>
+                </li>
+                <li class="py-2 border-bottom border-light border-opacity-10 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">تاريخ التسجيل:</span>
+                  <span class="text-white font-mono" id="disp-joined-date">-</span>
+                </li>
+                <li class="py-2 d-flex justify-content-between align-items-center">
+                  <span class="text-light text-opacity-75">البريد الإلكتروني:</span>
+                  <span class="text-white font-mono text-truncate" style="max-width: 170px;" id="disp-uni-email">-</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white" id="editProfileModalLabel">
+            <i class="fa-solid fa-user-pen text-primary ms-2"></i> تعديل بيانات الحساب والبروفايل
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="edit-profile-form">
+          <div class="modal-body p-4">
+            <div id="edit-profile-alert" class="alert d-none mb-3" role="alert"></div>
+
+            <div class="mb-3">
+              <label for="editPhone" class="form-label text-light small">رقم الموبايل (واتساب) <span class="text-danger">*</span></label>
+              <input type="tel" class="form-control ltr-input" id="editPhone" required placeholder="01xxxxxxxxx">
+            </div>
+
+            <div class="mb-3">
+              <label for="editCodeforces" class="form-label text-light small">يوزر Codeforces Handle</label>
+              <div class="input-group">
+                <span class="input-group-text tech-term">@</span>
+                <input type="text" class="form-control ltr-input" id="editCodeforces" placeholder="codeforces_handle">
+              </div>
+              <div class="form-text text-muted small">مهم لمتابعة تدريباتك وتقييم مستواك البرمجي.</div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label for="editLeetcode" class="form-label text-light small">بروفايل LeetCode</label>
+                <input type="text" class="form-control ltr-input" id="editLeetcode" placeholder="يوزر أو رابط">
+              </div>
+              <div class="col-md-6">
+                <label for="editGithub" class="form-label text-light small">بروفايل GitHub</label>
+                <input type="text" class="form-control ltr-input" id="editGithub" placeholder="يوزر أو رابط">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="editDiscord" class="form-label text-light small">يوزر سيرفر Discord</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fa-brands fa-discord text-primary"></i></span>
+                <input type="text" class="form-control ltr-input" id="editDiscord" placeholder="username أو tag">
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label for="editLang" class="form-label text-light small">اللغة البرمجية الأساسية</label>
+              <select class="form-select" id="editLang">
+                <option value="C++">C++</option>
+                <option value="Python">Python</option>
+                <option value="Java">Java</option>
+                <option value="C">C</option>
+                <option value="JavaScript">JavaScript</option>
+                <option value="Kotlin">Kotlin</option>
+                <option value="Go">Go</option>
+                <option value="Rust">Rust</option>
+                <option value="أخرى">أخرى – Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn-primary-custom btn-sm" id="btn-save-profile">
+              <span id="save-profile-text"><i class="fa-solid fa-floppy-disk ms-1"></i> حفظ التعديلات</span>
+              <span id="save-profile-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer-custom mt-auto">
+    <div class="container text-center small text-secondary">
+      <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+        <img src="assets/img/hti-icpc-logo.jpg" alt="HTI ICPC Logo" class="footer-logo" style="height: 32px; width: 32px;">
+        <span class="text-white fw-bold">HTI ICPC Community</span>
+      </div>
+      <p class="mb-0">&copy; 2026 HTI ICPC Community &bull; Higher Technological Institute &bull; Beni Suef</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/mock-db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/portal.js"></script>
+</body>
+</html>

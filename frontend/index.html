@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTI ICPC Community | مجتمع المعهد التكنولوجي العالي للبرمجة التنافسية</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="assets/img/hti-icpc-logo.jpg">
+  <link rel="apple-touch-icon" href="assets/img/hti-icpc-logo.jpg">
+
+  <!-- Favicon & Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 RTL CSS & FontAwesome -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Zero-Delay Instant Auth State Guard (0ms) -->
+  <script>
+    (function() {
+      try {
+        var a = localStorage.getItem('hti_admin_user') || sessionStorage.getItem('hti_admin_user');
+        var m = localStorage.getItem('hti_member_user') || sessionStorage.getItem('hti_member_user');
+        if (a) {
+          document.write('<style>#nav-portals-item, #nav-cta-item { display: none !important; } #nav-admin-btn-item { display: block !important; }</style>');
+        } else if (m) {
+          document.write('<style>#nav-portals-item, #nav-cta-item { display: none !important; } #nav-member-btn-item { display: block !important; }</style>');
+        }
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container">
+
+      <!-- Brand -->
+      <a class="navbar-brand" href="index.html">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-code"></i>
+        </div>
+        <div class="brand-text-group">
+          <span class="brand-title">HTI <span class="brand-highlight">ICPC</span></span>
+          <span class="brand-subtitle">COMMUNITY • BENI SUEF</span>
+        </div>
+      </a>
+
+      <!-- Mobile Toggle -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+        aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars text-light"></i>
+      </button>
+
+      <!-- Nav Links -->
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav ms-auto align-items-center gap-1">
+          <li class="nav-item"><a class="nav-link active" href="#home">الرئيسية</a></li>
+          <li class="nav-item"><a class="nav-link" href="#about">عن الـ Community</a></li>
+          <li class="nav-item"><a class="nav-link" href="#training">خريطة التدريب</a></li>
+          <li class="nav-item"><a class="nav-link" href="#events">المسابقات</a></li>
+          <li class="nav-item"><a class="nav-link" href="#announcements">الإعلانات</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">الأسئلة الشائعة</a></li>
+
+          <!-- Portals Dropdown -->
+          <li class="nav-item dropdown" id="nav-portals-item">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="nav-portals-toggle">
+              البوابات
+            </a>
+            <ul class="dropdown-menu dropdown-menu-custom" id="nav-portals-menu">
+              <li>
+                <a class="dropdown-item" href="portal.html">
+                  <i class="fa-solid fa-user-graduate me-2 text-success"></i>
+                  بوابة الطلاب وحسابي <span class="text-muted small">– Student Portal</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Dynamic Admin Button & Menu (shown only when Admin is logged in) -->
+          <li class="nav-item dropdown d-none" id="nav-admin-btn-item">
+            <a class="btn-navbar-admin ms-lg-1 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="nav-admin-link">
+              <i class="fa-solid fa-shield-halved ms-1"></i> <span id="nav-admin-name">لوحة الأدمن</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-custom">
+              <li>
+                <a class="dropdown-item" href="admin.html">
+                  <i class="fa-solid fa-gauge-high text-primary me-2"></i> لوحة التحكم – Dashboard
+                </a>
+              </li>
+              <li><hr class="dropdown-divider border-secondary border-opacity-25"></li>
+              <li>
+                <a class="dropdown-item text-danger" href="#" onclick="logoutAdminFromHome(event)">
+                  <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> تسجيل الخروج
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Dynamic Member/Student Button & Menu (shown only when Student is logged in) -->
+          <li class="nav-item dropdown d-none" id="nav-member-btn-item">
+            <a class="btn-navbar-member ms-lg-1 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="nav-member-link">
+              <i class="fa-solid fa-circle-user ms-1"></i> <span id="nav-member-name">حسابي</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-custom">
+              <li>
+                <a class="dropdown-item" href="portal.html">
+                  <i class="fa-solid fa-gauge-high text-success me-2"></i> لوحة الطالب ومتابعة الطلب
+                </a>
+              </li>
+              <li><hr class="dropdown-divider border-secondary border-opacity-25"></li>
+              <li>
+                <a class="dropdown-item text-danger" href="#" onclick="logoutMemberFromHome(event)">
+                  <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> تسجيل الخروج
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- CTA Button -->
+          <li class="nav-item ms-lg-2" id="nav-cta-item">
+            <a class="btn-navbar-apply" href="apply.html" id="nav-cta-btn">
+              <i class="fa-solid fa-paper-plane ms-1"></i> سجّل الآن
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Immediate Synchronous Navbar Name Population (0ms) -->
+  <script>
+    (function() {
+      try {
+        var aStr = localStorage.getItem('hti_admin_user') || sessionStorage.getItem('hti_admin_user');
+        var mStr = localStorage.getItem('hti_member_user') || sessionStorage.getItem('hti_member_user');
+        if (aStr) {
+          var admin = JSON.parse(aStr);
+          var firstName = (admin.fullName || 'Admin').split(' ')[0];
+          var el = document.getElementById('nav-admin-name');
+          if (el) el.textContent = 'لوحة الأدمن (' + firstName + ')';
+        } else if (mStr) {
+          var member = JSON.parse(mStr);
+          var mFirstName = (member.fullName || 'طالب').split(' ')[0];
+          var mEl = document.getElementById('nav-member-name');
+          if (mEl) mEl.textContent = 'حسابي (' + mFirstName + ')';
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Hero Section -->
+  <header id="home" class="hero-section">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        
+        <!-- Left Column: Hero Text & Call to Action -->
+        <div class="col-lg-7 text-center text-lg-start">
+          <div class="hero-pill">
+            <i class="fa-solid fa-trophy text-warning"></i>
+            <span class="tech-term fw-bold">YOUR NEXT CHALLENGE STARTS HERE</span>
+          </div>
+
+          <h1 class="hero-title">
+            مش لازم تكون خبير.. <span class="gradient-text">لازم تبدأ.</span>
+          </h1>
+
+          <p class="hero-subtitle ms-0 me-auto">
+            ادخل عالم الـ <span class="text-white fw-bold">Competitive Programming</span>، طوّر طريقة تفكيرك، وابدأ رحلتك لتمثيل <span class="text-info fw-bold">HTI_BNS</span> في مسابقات الـ <span class="text-warning fw-bold">ACPC</span> و <span class="text-primary fw-bold">ECPC</span>.
+          </p>
+
+          <!-- ICPC 3-Pill Formula Banner -->
+          <div class="d-flex justify-content-center justify-content-lg-start mb-4">
+            <div class="icpc-formula-bar">
+              <span class="icpc-formula-item"><i class="fa-solid fa-users"></i> 3 CODERS</span>
+              <span class="text-muted">&bull;</span>
+              <span class="icpc-formula-item"><i class="fa-solid fa-laptop-code"></i> 1 COMPUTER</span>
+              <span class="text-muted">&bull;</span>
+              <span class="icpc-formula-item"><i class="fa-solid fa-clock"></i> 5 HOURS</span>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-center justify-content-lg-start gap-3 flex-wrap">
+            <a href="apply.html" class="btn-primary-custom btn-lg">
+              <i class="fa-solid fa-user-plus ms-1"></i> ابدأ التسجيل
+            </a>
+            <a href="#training" class="btn-secondary-custom btn-lg">
+              <i class="fa-solid fa-compass ms-1"></i> شوف رحلة التصنيف
+            </a>
+            <a href="portal.html" class="btn-outline-custom btn-lg">
+              <i class="fa-solid fa-user-graduate ms-1"></i> الدخول إلى حسابي
+            </a>
+          </div>
+        </div>
+
+        <!-- Right Column: Glowing Futuristic Visual Frame with Official Community Logo -->
+        <div class="col-lg-5">
+          <div class="hero-visual-wrapper">
+            <div class="hero-glow-aura"></div>
+            <div class="hero-orbital-ring-1"></div>
+            <div class="hero-orbital-ring-2"></div>
+            <div class="floating-badge floating-badge-1">
+              <i class="fa-solid fa-code text-primary"></i>
+              <span class="tech-term">Competitive Programming</span>
+            </div>
+            <div class="floating-badge floating-badge-2">
+              <i class="fa-solid fa-trophy text-warning"></i>
+              <span class="tech-term">HTI &bull; ACPC &bull; ICPC</span>
+            </div>
+            <div class="hero-logo-frame">
+              <img src="assets/img/hti-icpc-logo.jpg" alt="Official HTI ACPC Community Logo" class="hero-logo-img">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Community Statistics Bar -->
+  <section class="py-5" style="background-color: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
+    <div class="container">
+      <div class="row g-4 text-center">
+        <div class="col-6 col-md-3">
+          <div class="stat-box">
+            <div class="stat-number text-primary tech-term" id="stat-apps">140+</div>
+            <div class="stat-label">طلبات التقديم – Applications</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-box">
+            <div class="stat-number text-success tech-term" id="stat-members">65+</div>
+            <div class="stat-label">الأعضاء النشطون – Active Members</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-box">
+            <div class="stat-number text-warning tech-term" id="stat-trainings">24+</div>
+            <div class="stat-label">سيشن تدريب – Training Hub</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-box">
+            <div class="stat-number text-info tech-term" id="stat-events">12+</div>
+            <div class="stat-label">مسابقات منتقاة – Contests Hosted</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us Section -->
+  <section id="about" class="section-padding">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">عن مجتمع HTI ICPC Community</h2>
+        <p class="section-subtitle">بناء جيل جديد من أبطال الـ Problem Solving في المعهد التكنولوجي العالي – فرع بني سويف.</p>
+      </div>
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+          <div class="custom-card card-gradient-top h-100">
+            <h3 class="h4 mb-3 text-primary"><i class="fa-solid fa-bullseye ms-2"></i> الرؤية والرسالة – Mission & Vision</h3>
+            <p class="text-secondary">
+              رسالتنا هي خلق بيئة تعليمية قوية ومجتمع تفاعلي مستمر يساعد طلاب المعهد من جميع الأقسام على احتراف الخوارزميات، وتأهيل أفضل الفرق للمنافسة في مسابقات <span class="text-light fw-bold">ECPC</span> و <span class="text-light fw-bold">ACPC</span>، والوصول لأعلى المراتب البرمجية.
+            </p>
+            <h4 class="h5 mt-4 mb-2 text-light"><i class="fa-solid fa-star text-warning ms-2"></i> إيه هي مسابقة الـ ICPC؟</h4>
+            <p class="text-secondary">
+              مسابقة <strong class="text-white">ICPC</strong> هي أقدم وأكبر وأقوى مسابقة برمجة جامعية على مستوى العالم. بيتنافس فيها فرق من 3 طلاب على جهاز واحد لحل مسائل خوارزمية صعبة خلال 5 ساعات تحت ضغط الوقت وتحدي السرعة والتفكير الدقيق.
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="custom-card p-4">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="p-3 rounded bg-primary bg-opacity-10 text-primary">
+                    <i class="fa-solid fa-brain fa-2x"></i>
+                  </div>
+                  <div>
+                    <h4 class="h5 mb-1">حل المشكلات الخوارزمية – Problem Solving</h4>
+                    <p class="text-secondary mb-0">تعلّم هياكل البيانات المتقدمة، البرمجة الديناميكية (Dynamic Programming)، وخوارزميات الرسوم البيانية (Graph Theory) خطوة بخطوة.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="custom-card p-4">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="p-3 rounded bg-success bg-opacity-10 text-success">
+                    <i class="fa-solid fa-people-group fa-2x"></i>
+                  </div>
+                  <div>
+                    <h4 class="h5 mb-1">العمل الجماعي وروح الفريق – Teamwork</h4>
+                    <p class="text-secondary mb-0">التدريب في فرق ثلاثية، محاكاة أجواء المسابقات الرسمية، وبناء مهارات التواصل تحت ضغط المنافسة.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="custom-card p-4">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="p-3 rounded bg-warning bg-opacity-10 text-warning">
+                    <i class="fa-solid fa-briefcase fa-2x"></i>
+                  </div>
+                  <div>
+                    <h4 class="h5 mb-1">فرص العمل في كبرى الشركات – FAANG & Top Tech</h4>
+                    <p class="text-secondary mb-0">أبطال الـ Competitive Programming هم الأكثر طلباً لاجتياز المقابلات التقنية في شركات البرمجيات العالمية الكبرى.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Activities Section -->
+  <section id="activities" class="section-padding" style="background-color: var(--bg-secondary);">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">أنشطة الـ Community</h2>
+        <p class="section-subtitle">أنشطة مستمرة على مدار العام لتطوير مستواك وصقل مهاراتك البرمجية.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="custom-card h-100">
+            <div class="p-3 rounded bg-primary bg-opacity-10 text-primary d-inline-block mb-3">
+              <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+            </div>
+            <h4 class="h5 mb-2">Weekly Training Sessions</h4>
+            <p class="text-secondary">محاضرات أسبوعية تفاعلية تشرح موضوعات خوارزمية محددة مع شيتات مسائل تطبيقية على Codeforces و VJudge.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="custom-card h-100">
+            <div class="p-3 rounded bg-info bg-opacity-10 text-info d-inline-block mb-3">
+              <i class="fa-solid fa-stopwatch fa-2x"></i>
+            </div>
+            <h4 class="h5 mb-2">Internal Contests & Gyms</h4>
+            <p class="text-secondary">مسابقات دورية بمؤقت زمني ونظام النقاط والـ Penalty الرسمي لزيادة سرعتك وثباتك في الحل.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="custom-card h-100">
+            <div class="p-3 rounded bg-success bg-opacity-10 text-success d-inline-block mb-3">
+              <i class="fa-solid fa-laptop-code fa-2x"></i>
+            </div>
+            <h4 class="h5 mb-2">Hands-On Workshops</h4>
+            <p class="text-secondary">ورش عمل عملية لتعلّم أسرار C++ STL، وتحسين الـ Fast I/O، والـ Bitwise Operations، والـ Stress Testing.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="custom-card h-100">
+            <div class="p-3 rounded bg-warning bg-opacity-10 text-warning d-inline-block mb-3">
+              <i class="fa-solid fa-flag-checkered fa-2x"></i>
+            </div>
+            <h4 class="h5 mb-2">ECPC Qualifications Prep</h4>
+            <p class="text-secondary">معسكر تدريبي مكثف لاختيار وتأهيل الفرق الرسمية التي ستمثل المعهد في تصفيات البطولة المصرية ECPC.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="custom-card h-100">
+            <div class="p-3 rounded bg-secondary bg-opacity-10 text-info d-inline-block mb-3">
+              <i class="fa-solid fa-comments fa-2x"></i>
+            </div>
+            <h4 class="h5 mb-2">Problem Solving Circles</h4>
+            <p class="text-secondary">حلقات نقاشية دورية، مراجعة الـ Editorials، وجلسات Upsolving للمسائل الصعبة بعد كل مسابقة.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="custom-card h-100">
+            <div class="p-3 rounded bg-danger bg-opacity-10 text-danger d-inline-block mb-3">
+              <i class="fa-solid fa-medal fa-2x"></i>
+            </div>
+            <h4 class="h5 mb-2">HTI Local Contest</h4>
+            <p class="text-secondary">المسابقة السنوية الكبرى على مستوى المعهد مع تكريم المتفوقين وتوزيع جوائز وشهادات تقدير.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Qualification Roadmap Section -->
+  <section id="training" class="section-padding">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">خريطة طريق المتسابق – Qualification Roadmap</h2>
+        <p class="section-subtitle">رحلة متكاملة ومراحل تدريب وتصفية تصاعدية لنقلك من الصفر في البرمجة حتى تمثيل المعهد في مسابقات ICPC الرسمية.</p>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        <!-- Phase 1: Foundation -->
+        <div class="col-lg-4 col-md-6">
+          <div class="phase-card phase-card-1">
+            <!-- Top Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="phase-pill-badge phase-pill-1">
+                <i class="fa-solid fa-seedling"></i> المرحلة 01
+              </span>
+              <span class="text-muted small">قبول عام وتأسيس</span>
+            </div>
+
+            <!-- Title & English Label -->
+            <div class="mb-3">
+              <h3 class="h5 fw-bold text-light mb-1">التأسيس و Problem Solving</h3>
+              <span class="text-primary small fw-semibold tech-term">Phase 1: Foundations</span>
+            </div>
+
+            <p class="text-secondary small mb-3">
+              مفتوحة لكافة المقبولين من الطلاب. نبدأ من أساسيات البرمجة بالـ C++، التفكير المنطقي، وطرق حل المشكلات بدون متطلبات سابقة.
+            </p>
+
+            <!-- Clean Checklist -->
+            <ul class="list-unstyled mb-4 pe-0 text-secondary small d-flex flex-column gap-2">
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-primary"></i>
+                <span>أساسيات لغة C++، الـ Loops والـ Functions</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-primary"></i>
+                <span>المصفوفات، الـ Strings ومصفوفات الـ 2D</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-primary"></i>
+                <span>حساب تعقيد الكود (Time & Space Complexity)</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-primary"></i>
+                <span>مكتبة C++ STL (vector, map, set, pair)</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-primary"></i>
+                <span>أساسيات الـ Math والـ Number Theory</span>
+              </li>
+            </ul>
+
+            <!-- Gate Box -->
+            <div class="phase-gate-card">
+              <div class="d-flex align-items-center gap-2 fw-semibold text-warning mb-1 small">
+                <i class="fa-solid fa-flag-checkered"></i>
+                <span>بوابة التصفية الأولى:</span>
+              </div>
+              <p class="mb-0 text-secondary small" style="font-size: 0.8rem; line-height: 1.5;">
+                امتحان تأهيلي عملي (Contest) + تقييم الالتزام بالمهام الأسبوعية للتأهل للمرحلة 2.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 2: Algorithms & Intermediate -->
+        <div class="col-lg-4 col-md-6">
+          <div class="phase-card phase-card-2">
+            <!-- Top Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="phase-pill-badge phase-pill-2">
+                <i class="fa-solid fa-brain"></i> المرحلة 02
+              </span>
+              <span class="text-muted small">المستوى المتوسط</span>
+            </div>
+
+            <!-- Title & English Label -->
+            <div class="mb-3">
+              <h3 class="h5 fw-bold text-light mb-1">الـ Algorithms و Data Structures</h3>
+              <span class="small fw-semibold tech-term" style="color: #c084fc;">Phase 2: Intermediate</span>
+            </div>
+
+            <p class="text-secondary small mb-3">
+              تأهيل المتأهلين من المرحلة الأولى للتعامل مع مشكلات برمجية معقدة، والمنافسة في جولات Codeforces والـ Gyms المكثفة.
+            </p>
+
+            <!-- Clean Checklist -->
+            <ul class="list-unstyled mb-4 pe-0 text-secondary small d-flex flex-column gap-2">
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
+                <span>الـ Prefix Sums والـ Two Pointers</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
+                <span>الـ Binary Search والـ Ternary Search</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
+                <span>الـ Recursion والـ Backtracking</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
+                <span>خوارزميات الـ Greedy والـ Sorting</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
+                <span>أساسيات الـ Graphs (BFS, DFS, Dijkstra)</span>
+              </li>
+            </ul>
+
+            <!-- Gate Box -->
+            <div class="phase-gate-card">
+              <div class="d-flex align-items-center gap-2 fw-semibold text-info mb-1 small">
+                <i class="fa-solid fa-trophy"></i>
+                <span>بوابة التصفية الثانية:</span>
+              </div>
+              <p class="mb-0 text-secondary small" style="font-size: 0.8rem; line-height: 1.5;">
+                مسابقة محاكاة تنافسية (HTI Local Contest) لتحديد المرشحين لتشكيل الفرق الرسمية.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 3: Elite & Official Teams -->
+        <div class="col-lg-4 col-md-6">
+          <div class="phase-card phase-card-3">
+            <!-- Top Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="phase-pill-badge phase-pill-3">
+                <i class="fa-solid fa-award"></i> المرحلة 03
+              </span>
+              <span class="text-muted small">فرق النخبة والتصفيات</span>
+            </div>
+
+            <!-- Title & English Label -->
+            <div class="mb-3">
+              <h3 class="h5 fw-bold text-light mb-1">معسكر النخبة والتصفيات الكبرى</h3>
+              <span class="text-warning small fw-semibold tech-term">Phase 3: Elite Teams</span>
+            </div>
+
+            <p class="text-secondary small mb-3">
+              تدريب مكثف للفرق الرسمية (3 متسابقين لكل جهاز) لمحاكاة معايير ECPC / ACPC الدولية مع معسكرات تدريب مكثفة.
+            </p>
+
+            <!-- Clean Checklist -->
+            <ul class="list-unstyled mb-4 pe-0 text-secondary small d-flex flex-column gap-2">
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-warning"></i>
+                <span>البرمجة الديناميكية المتقدمة والـ Bitmask DP</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-warning"></i>
+                <span>الـ Segment Trees والـ Fenwick Trees</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-warning"></i>
+                <span>الـ Disjoint Set Union (DSU) والـ MST</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-warning"></i>
+                <span>خوارزميات الـ Shortest Paths والـ Max Flow</span>
+              </li>
+              <li class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check text-warning"></i>
+                <span>استراتيجيات إدارة وقت الفريق وتوزيع المسائل</span>
+              </li>
+            </ul>
+
+            <!-- Gate Box -->
+            <div class="phase-gate-card">
+              <div class="d-flex align-items-center gap-2 fw-semibold text-warning mb-1 small">
+                <i class="fa-solid fa-earth-americas"></i>
+                <span>الهدف النهائي:</span>
+              </div>
+              <p class="mb-0 text-secondary small" style="font-size: 0.8rem; line-height: 1.5;">
+                التأهل والمنافسة في ECPC (البطولة المصرية) والوصول إلى ACPC (البطولة العربية والأفريقية).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Callout -->
+      <div class="mt-5 p-4 rounded-4 text-center" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(168, 85, 247, 0.12)); border: 1px solid rgba(255, 255, 255, 0.1);">
+        <h4 class="h5 fw-bold text-light mb-2">جاهز تبدأ رحلتك التنافسية معنا؟</h4>
+        <p class="text-secondary small mb-3">التسجيل متاح لكافة طلاب المعهد التكنولوجي العالي – ابدأ من المرحلة الأولى وتدرّج خطوة بخطوة!</p>
+        <a href="apply.html" class="btn-primary-custom px-4 py-2">
+          <i class="fa-solid fa-paper-plane me-1"></i> سجّل الآن في الموسم التدريبي
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upcoming Contests & Events Section -->
+  <section id="events" class="section-padding" style="background-color: var(--bg-secondary);">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
+        <div>
+          <h2 class="section-title mb-1">المسابقات والأحداث القادمة – Upcoming Contests</h2>
+          <p class="text-secondary mb-0">شارك في التحديات البرمجية القادمة واختبر مستواك وسط زملائك.</p>
+        </div>
+        <a href="apply.html" class="btn-primary-custom">
+          <i class="fa-solid fa-trophy ms-1"></i> سجّل للمسابقات
+        </a>
+      </div>
+      <div class="row g-4" id="events-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" class="section-padding">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">الأسئلة الأكثر شيوعاً – FAQ</h2>
+        <p class="section-subtitle">كل ما تود معرفته عن الانضمام للمجتمع، التدريب، الاختبارات والتصفيات.</p>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-9">
+          <div class="accordion custom-faq-accordion" id="faqAccordion">
+
+            <!-- Question 1 -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-heading-1">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-collapse-1" aria-expanded="false" aria-controls="faq-collapse-1">
+                  <i class="fa-solid fa-circle-question ms-2 text-primary"></i>
+                  أنا معنديش أي خلفية سابقة في البرمجة، هل أقدر أنضم وأستفيد؟
+                </button>
+              </h3>
+              <div id="faq-collapse-1" class="accordion-collapse collapse" aria-labelledby="faq-heading-1" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  <strong>نعم تماماً!</strong> المرحلة الأولى (التأسيس) مصممة للطلاب الذين يبدأون من نقطة الصفر. لا نشترط أي معرفة مسبقة بالبرمجة أو لغة C++؛ المدربون يشرحون الأساسيات خطوة بخطوة مع تدريبات وشيتات مسائل عملية أسبوعية.
+                </div>
+              </div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-heading-2">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-collapse-2" aria-expanded="false" aria-controls="faq-collapse-2">
+                  <i class="fa-solid fa-money-bill-wave ms-2 text-success"></i>
+                  هل التدريب أو الاشتراك في الـ Community بمقابل مادي؟
+                </button>
+              </h3>
+              <div id="faq-collapse-2" class="accordion-collapse collapse" aria-labelledby="faq-heading-2" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  <strong>التدريب مجاني 100%.</strong> نشاط HTI ICPC Community نشاط طلابي أكاديمي تطوعي لا يهدف للربح، ويتم بدعم وإشراف معهد HTI ببني سويف لنشر ثقافة البرمجة التنافسية وبناء أجيال متميزة.
+                </div>
+              </div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-heading-3">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-collapse-3" aria-expanded="false" aria-controls="faq-collapse-3">
+                  <i class="fa-solid fa-filter ms-2 text-info"></i>
+                  إزاي بيتم نظام التصفيات والانتقال بين المراحل التدريبية؟
+                </button>
+              </h3>
+              <div id="faq-collapse-3" class="accordion-collapse collapse" aria-labelledby="faq-heading-3" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  يتم قبول جميع الطلاب المتقدمين بالمرحلة الأولى، وأثناء فترة التدريب يحضر الجميع المحاضرات ويحلون الشيتات. بنهاية المرحلة يُعقد امتحان تصفية عملي (Contest)، وبناءً على النتائج والالتزام يتأهل الطلاب الملتزمون إلى المراحل المتقدمة حتى مرحلة اختيار فرق المعهد الرسمية.
+                </div>
+              </div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-heading-4">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-collapse-4" aria-expanded="false" aria-controls="faq-collapse-4">
+                  <i class="fa-solid fa-laptop-code ms-2 text-warning"></i>
+                  أين يُعقد التدريب وما هي المواعيد الأسبوعية؟
+                </button>
+              </h3>
+              <div id="faq-collapse-4" class="accordion-collapse collapse" aria-labelledby="faq-heading-4" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  يُعقد التدريب حضورياً في معامل الحاسب الآلي المجهزة بمقر المعهد التكنولوجي العالي ببني سويف، بالتنسيق في أيام عطلة نهاية الأسبوع (الجمعة والسبت) تجنباً للتعارض مع جدول الدراسة، بالإضافة إلى مسابقات وتحديات تدريبية أونلاين على Codeforces.
+                </div>
+              </div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-heading-5">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq-collapse-5" aria-controls="faq-collapse-5">
+                  <i class="fa-solid fa-briefcase ms-2 text-danger"></i>
+                  ما الفائدة التي تعود عليّ كطالب من المشاركة في الـ ICPC؟
+                </button>
+              </h3>
+              <div id="faq-collapse-5" class="accordion-collapse collapse" aria-labelledby="faq-heading-5" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  الـ Problem Solving والبرمجة التنافسية هي المعيار الأول والرئيسي الذي تعتمد عليه كبرى شركات التكنولوجيا العالمية والمحلية في المقابلات التقنية (Technical Interviews). التدريب يكسبك سرعة كتابة كود خالٍ من الأخطاء، التفكير التحليلي، وإدارة الوقت والعمل الجماعي.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Announcements Section -->
+  <section id="announcements" class="section-padding" style="background-color: var(--bg-secondary);">
+    <div class="container">
+      <div class="text-center">
+        <h2 class="section-title">آخر الأخبار والإعلانات – Announcements</h2>
+        <p class="section-subtitle">تابع أحدث الأخبار والتنبيهات الرسمية الخاصة بالـ Community.</p>
+      </div>
+      <div class="row g-4" id="announcements-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="section-padding text-center" style="background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);">
+    <div class="container">
+      <div class="custom-card p-5 mx-auto" style="max-width: 800px; border-color: rgba(59, 130, 246, 0.4);">
+        <h2 class="h1 fw-bold mb-3">جاهز تبدأ رحلتك في الـ Problem Solving؟</h2>
+        <p class="text-secondary mb-4 fs-5">
+          باب التقديم مفتوح لجميع أقسام المعهد (برمجة، شبكات، ميكاترونيكس، طاقة). خطوتك الأولى نحو احتراف الخوارزميات وبداية المنافسة في مسابقات الـ ACPC.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a href="apply.html" class="btn-primary-custom btn-lg">
+            <i class="fa-solid fa-paper-plane ms-1"></i> سجّل الآن – Apply Now
+          </a>
+          <a href="portal.html" class="btn-secondary-custom btn-lg">
+            <i class="fa-solid fa-user-graduate ms-1"></i> الدخول إلى حسابي – Student Portal
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer-custom">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <img src="assets/img/hti-icpc-logo.jpg" alt="HTI ICPC Community Logo" class="footer-logo">
+            <div>
+              <span class="fw-bold text-white fs-5 d-block">HTI ICPC COMMUNITY</span>
+              <span class="text-muted small">المعهد التكنولوجي العالي – فرع بني سويف</span>
+            </div>
+          </div>
+          <p class="text-secondary small">
+            المجتمع الرسمي للبرمجة التنافسية بالمعهد التكنولوجي العالي – بني سويف. <span class="tech-term text-primary fw-bold">Think. Code. Compete. Win.</span>
+          </p>
+          <div class="d-flex gap-3 mt-3">
+            <a href="#" class="text-secondary fs-5"><i class="fa-brands fa-facebook"></i></a>
+            <a href="#" class="text-secondary fs-5"><i class="fa-brands fa-linkedin"></i></a>
+            <a href="#" class="text-secondary fs-5"><i class="fa-brands fa-discord"></i></a>
+            <a href="#" class="text-secondary fs-5"><i class="fa-brands fa-whatsapp"></i></a>
+            <a href="#" class="text-secondary fs-5"><i class="fa-brands fa-github"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-6">
+          <h5>روابط سريعة</h5>
+          <ul class="footer-links">
+            <li><a href="#home">الرئيسية</a></li>
+            <li><a href="#about">عن الـ ICPC</a></li>
+            <li><a href="#activities">الأنشطة البرمجية</a></li>
+            <li><a href="#training">خريطة التدريب</a></li>
+            <li><a href="#faq">الأسئلة الشائعة</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-6">
+          <h5>البوابات – Portals</h5>
+          <ul class="footer-links">
+            <li><a href="apply.html">تسجيل الطلاب – Apply</a></li>
+            <li><a href="portal.html">بوابة الطلاب وحسابي – Student Portal</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3">
+          <h5>تواصل معنا – Contact</h5>
+          <p class="text-secondary small mb-1"><i class="fa-solid fa-location-dot ms-2 text-primary"></i> معمل الحاسب الآلي – معهد HTI بني سويف</p>
+          <p class="text-secondary small mb-1"><i class="fa-solid fa-envelope ms-2 text-primary"></i> <span class="tech-term">icpc@hti.edu.eg</span></p>
+          <p class="text-secondary small"><i class="fa-solid fa-clock ms-2 text-primary"></i> مواعيد التدريب: الجمعة والسبت أسبوعياً</p>
+        </div>
+      </div>
+      <hr class="my-4" style="border-color: var(--border-color);">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 small text-secondary">
+        <div>جميع الحقوق محفوظة &copy; 2026 HTI ICPC Community.</div>
+        <div>
+          صُمم خصيصاً لطلاب المعهد التكنولوجي العالي.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/mock-db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

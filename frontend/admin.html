@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم | HTI ICPC Admin Suite</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/jpeg" href="assets/img/hti-icpc-logo.jpg">
+  <link rel="apple-touch-icon" href="assets/img/hti-icpc-logo.jpg">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <style>
+    .admin-sidebar {
+      width: 260px;
+      min-height: calc(100vh - 65px);
+      background-color: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+    }
+    .admin-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.85rem 1.25rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      margin: 0.25rem 0.75rem;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .admin-nav-item:hover, .admin-nav-item.active {
+      color: var(--text-primary);
+      background-color: var(--bg-card);
+      border-right: 3px solid var(--primary-accent);
+    }
+    .content-area {
+      flex: 1;
+      padding: 2rem;
+      background-color: var(--bg-primary);
+      overflow-y: auto;
+    }
+    @media (max-width: 991px) {
+      .admin-layout {
+        flex-direction: column;
+      }
+      .admin-sidebar {
+        width: 100%;
+        min-height: auto;
+      }
+    }
+  </style>
+  <script>
+    if (localStorage.getItem('hti_admin_token') || sessionStorage.getItem('hti_admin_token')) {
+      document.write('<style>#admin-login-view{display:none!important;}#admin-dashboard-layout{display:flex!important;}</style>');
+    }
+  </script>
+</head>
+<body>
+
+  <!-- Admin Top Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand" href="index.html">
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="brand-text-group">
+          <span class="brand-title">HTI <span class="brand-highlight">ICPC</span></span>
+          <span class="brand-subtitle">ADMIN SUITE</span>
+        </div>
+      </a>
+      
+      <!-- Right-side controls (in RTL, ms-auto places them on left/end) -->
+      <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
+        
+        <!-- Live Status Indicator -->
+        <div class="gas-live-badge d-flex align-items-center gap-2" id="gas-status-indicator" title="حالة الاتصال المباشر بقاعدة البيانات">
+          <span class="live-pulse-dot"></span>
+          <span class="font-mono fw-bold">Live</span>
+        </div>
+
+        <!-- Back to Public Site -->
+        <a href="index.html" class="nav-home-pill" id="public-home-link" title="الرجوع إلى الموقع الرئيسي">
+          <i class="fa-solid fa-house"></i>
+          <span class="d-none d-md-inline">الموقع الرئيسي</span>
+        </a>
+
+        <!-- Authenticated Admin Profile & Logout -->
+        <div class="d-flex align-items-center gap-2" id="admin-user-profile" style="display: none !important;">
+          <!-- Profile Pill -->
+          <button type="button" class="admin-profile-pill" onclick="switchAdminTab('tab-profile')" title="عرض وتعديل ملفي الشخصي">
+            <div class="admin-avatar-circle">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div class="d-none d-sm-block text-start">
+              <div class="admin-pill-name" id="admin-disp-name">Administrator</div>
+              <div class="admin-pill-role" id="admin-disp-role">SUPER_ADMIN</div>
+            </div>
+            <i class="fa-solid fa-gear admin-gear-icon ms-1"></i>
+          </button>
+
+          <!-- Logout Button -->
+          <button type="button" class="admin-logout-pill" onclick="logoutAdmin()" title="تسجيل الخروج">
+            <i class="fa-solid fa-power-off"></i>
+            <span class="d-none d-sm-inline">خروج</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Immediate Synchronous Admin Profile Sync (0ms) -->
+  <script>
+    (function() {
+      try {
+        var aStr = localStorage.getItem('hti_admin_user') || sessionStorage.getItem('hti_admin_user');
+        if (aStr) {
+          var admin = JSON.parse(aStr);
+          var nameEl = document.getElementById('admin-disp-name');
+          var roleEl = document.getElementById('admin-disp-role');
+          var profileEl = document.getElementById('admin-user-profile');
+          if (nameEl) nameEl.textContent = admin.fullName || 'Administrator';
+          if (roleEl) {
+            roleEl.textContent = admin.role || 'SUPER_ADMIN';
+            roleEl.className = admin.role === 'SUPER_ADMIN' ? 'badge bg-danger bg-opacity-25 text-danger small' :
+                              admin.role === 'ADMIN' ? 'badge bg-primary bg-opacity-25 text-primary small' :
+                              admin.role === 'REVIEWER' ? 'badge bg-warning bg-opacity-25 text-warning small' :
+                              'badge bg-secondary bg-opacity-25 text-light small';
+          }
+          if (profileEl) profileEl.style.setProperty('display', 'flex', 'important');
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Login Section (Shown if unauthenticated) -->
+  <div id="admin-login-view" class="py-5">
+    <div class="container" style="max-width: 520px;">
+      
+      <div class="text-center mb-4">
+        <div class="mb-2">
+          <img src="assets/img/hti-icpc-logo.jpg" alt="Official HTI ACPC Logo" class="footer-logo mb-2" style="height: 70px; width: 70px; border-radius: 14px; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);">
+        </div>
+        <h1 class="h3 fw-bold text-white mb-2">لوحة التحكم الإدارية – Staff Portal</h1>
+        <p class="text-secondary small">تسجيل الدخول للمشرفين والمدربين ولجنة تقييم وقبول الطلبات (RBAC).</p>
+      </div>
+
+      <div id="admin-login-alert" class="alert d-none mb-3" role="alert"></div>
+
+      <div class="custom-card card-gradient-top p-4">
+        <form id="admin-login-form">
+          <div class="mb-3">
+            <label for="adminEmail" class="form-label">إيميل المشرف – Admin Email</label>
+            <input type="email" class="form-control ltr-input" id="adminEmail" placeholder="admin@domain.com" required>
+          </div>
+          <div class="mb-4">
+            <label for="adminPassword" class="form-label">كلمة المرور – Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control ltr-input" id="adminPassword" placeholder="••••••••" required>
+              <button class="btn toggle-pwd-btn" type="button" data-target="adminPassword" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary-custom w-100 py-2" id="admin-login-btn">
+            <span id="admin-btn-text"><i class="fa-solid fa-lock-open ms-1"></i> تسجيل الدخول – Sign In</span>
+            <span id="admin-btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authenticated Admin Layout (Hidden by default) -->
+  <div id="admin-dashboard-layout" class="d-flex admin-layout d-none">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar py-3">
+      <div class="px-3 mb-3 text-muted small text-uppercase fw-bold">القائمة الرئيسية – Navigation</div>
+      <div class="admin-nav-item active" data-tab="tab-overview">
+        <i class="fa-solid fa-chart-pie"></i> الإحصائيات – Overview
+      </div>
+      <div class="admin-nav-item" data-tab="tab-applications">
+        <i class="fa-solid fa-file-lines"></i> طلبات التقديم – Applications
+      </div>
+      <div class="admin-nav-item" data-tab="tab-members">
+        <i class="fa-solid fa-users"></i> الأعضاء – Members
+      </div>
+      <div class="admin-nav-item" data-tab="tab-events">
+        <i class="fa-solid fa-calendar-days"></i> المسابقات والتدريب – Events
+      </div>
+      <div class="admin-nav-item" data-tab="tab-profile">
+        <i class="fa-solid fa-id-card"></i> الملف الشخصي – My Profile
+      </div>
+      
+      <!-- Super Admin Only tabs -->
+      <div class="superadmin-only">
+        <div class="px-3 mt-4 mb-2 text-muted small text-uppercase fw-bold">إدارة النظام – Administration</div>
+        <div class="admin-nav-item" data-tab="tab-admins">
+          <i class="fa-solid fa-user-shield"></i> المشرفون – Admins
+        </div>
+        <div class="admin-nav-item" data-tab="tab-logs">
+          <i class="fa-solid fa-list-check"></i> سجل العمليات – Audit Logs
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      
+      <!-- TAB 1: OVERVIEW & STATS -->
+      <section id="tab-overview" class="admin-tab-pane">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1">لوحة المتابعة الشاملة – Dashboard Overview</h2>
+            <p class="text-secondary small mb-0">مؤشرات الأداء اللحظية، خط سير قبول المتقدمين، وإحصائيات الطلاب.</p>
+          </div>
+          <button class="btn-secondary-custom btn-sm" onclick="refreshDashboardStats()">
+            <i class="fa-solid fa-rotate ms-1"></i> تحديث البيانات
+          </button>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">إجمالي الطلبات – Total Applications</span>
+              <div class="stat-number text-primary tech-term" id="kpi-total-apps">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">قيد المراجعة – Pending Review</span>
+              <div class="stat-number text-warning tech-term" id="kpi-pending-apps">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">تحت التقييم – Under Review</span>
+              <div class="stat-number text-info tech-term" id="kpi-review-apps">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">المقبولون – Approved</span>
+              <div class="stat-number text-success tech-term" id="kpi-approved-apps">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">قائمة الانتظار – Waitlisted</span>
+              <div class="stat-number tech-term" style="color: var(--secondary-accent);" id="kpi-waitlisted-apps">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">غير مقبول – Rejected</span>
+              <div class="stat-number text-danger tech-term" id="kpi-rejected-apps">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">الأعضاء النشطون – Active Members</span>
+              <div class="stat-number text-success tech-term" id="kpi-active-members">0</div>
+            </div>
+          </div>
+          <div class="col-xl-3 col-sm-6">
+            <div class="stat-box text-start p-3">
+              <span class="stat-label">المشرفون والمدربون – Staff Admins</span>
+              <div class="stat-number text-white tech-term" id="kpi-total-admins">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+          <div class="col-lg-6">
+            <div class="custom-card p-4 h-100">
+              <h4 class="h6 fw-bold text-white mb-3"><i class="fa-solid fa-chart-pie ms-2 text-primary"></i> توزيع حالات الطلبات – Status Distribution</h4>
+              <div style="height: 280px; position: relative;">
+                <canvas id="chart-status"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="custom-card p-4 h-100">
+              <h4 class="h6 fw-bold text-white mb-3"><i class="fa-solid fa-chart-column ms-2 text-success"></i> الفرق الدراسية للمتقدمين – Academic Year</h4>
+              <div style="height: 280px; position: relative;">
+                <canvas id="chart-year"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Stream -->
+        <div class="custom-card p-4">
+          <h4 class="h6 fw-bold text-white mb-3"><i class="fa-solid fa-clock-rotate-left ms-2 text-warning"></i> آخر العمليات الإدارية – Recent Admin Actions</h4>
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>الوقت – Time</th>
+                  <th>المشرف – Admin</th>
+                  <th>نوع العملية – Action</th>
+                  <th>الهدف – Entity</th>
+                  <th>التفاصيل – Details</th>
+                </tr>
+              </thead>
+              <tbody id="overview-activity-tbody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: APPLICATIONS MANAGEMENT -->
+      <section id="tab-applications" class="admin-tab-pane d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1">إدارة طلبات الانضمام – Applications Management</h2>
+            <p class="text-secondary small mb-0">مراجعة ملفات المتقدمين، اتخاذ قرارات القبول، وإضافة الملاحظات الداخلية.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm" onclick="exportApplicationsCSV()">
+              <i class="fa-solid fa-file-csv ms-1"></i> تصدير CSV
+            </button>
+            <button class="btn-primary-custom btn-sm" onclick="loadApplicationsTable()">
+              <i class="fa-solid fa-rotate ms-1"></i> تحديث الجدول
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="custom-card p-3 mb-4">
+          <div class="row g-2">
+            <div class="col-md-4">
+              <input type="text" class="form-control form-control-sm" id="app-search-input" placeholder="بحث بالاسم، رقم الكارنيه، أو الإيميل...">
+            </div>
+            <div class="col-md-3">
+              <select class="form-select form-select-sm" id="app-filter-status">
+                <option value="ALL">جميع الحالات – All Statuses</option>
+                <option value="Pending">قيد المراجعة – Pending</option>
+                <option value="Under Review">تحت التقييم – Under Review</option>
+                <option value="Approved">تم القبول – Approved</option>
+                <option value="Waitlisted">قائمة الانتظار – Waitlisted</option>
+                <option value="Rejected">مرفوض – Rejected</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select form-select-sm" id="app-filter-dept">
+                <option value="ALL">جميع الأقسام – All Departments</option>
+                <option value="برمجة">برمجة</option>
+                <option value="شبكات">شبكات</option>
+                <option value="ميكاترونيكس">ميكاترونيكس</option>
+                <option value="طاقة">طاقة</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select class="form-select form-select-sm" id="app-filter-year">
+                <option value="ALL">جميع الفرق – All Years</option>
+                <option value="الفرقة الأولى">الفرقة الأولى</option>
+                <option value="الفرقة الثانية">الفرقة الثانية</option>
+                <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+                <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Applications Table -->
+        <div class="custom-card p-0 overflow-hidden">
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>اسم المتقدم – Applicant</th>
+                  <th>الكارنيه – ID</th>
+                  <th>القسم والفرقة</th>
+                  <th>الخبرة – Level</th>
+                  <th>تاريخ التقديم</th>
+                  <th>الحالة – Status</th>
+                  <th>المراجع – Reviewer</th>
+                  <th class="text-end">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="applications-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: MEMBERS DIRECTORY -->
+      <section id="tab-members" class="admin-tab-pane d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1">دليل الأعضاء المقبولين – Members Directory</h2>
+            <p class="text-secondary small mb-0">قائمة الطلاب الذين تم اعتمادهم رسمياً كأعضاء في الـ Community ومساراتهم التدريبية.</p>
+          </div>
+          <button class="btn btn-outline-success btn-sm" onclick="exportMembersCSV()">
+            <i class="fa-solid fa-file-csv ms-1"></i> تصدير الأعضاء CSV
+          </button>
+        </div>
+
+        <!-- Members Filters -->
+        <div class="custom-card p-3 mb-4">
+          <div class="row g-2">
+            <div class="col-md-3">
+              <input type="text" class="form-control form-control-sm" id="mem-search-input" placeholder="بحث بالاسم، الكارنيه، أو يوزر...">
+            </div>
+            <div class="col-md-2">
+              <select class="form-select form-select-sm" id="mem-filter-phase">
+                <option value="ALL">جميع المراحل – All Phases</option>
+                <option value="المرحلة 1">المرحلة 1</option>
+                <option value="المرحلة 2">المرحلة 2</option>
+                <option value="المرحلة 3">المرحلة 3</option>
+                <option value="المرحلة 4">المرحلة 4</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select class="form-select form-select-sm" id="mem-filter-phase-status">
+                <option value="ALL">حالة التصفية – All</option>
+                <option value="ACTIVE">⏳ مستمر (Active)</option>
+                <option value="QUALIFIED">🎉 مؤهل (Qualified)</option>
+                <option value="ELIMINATED">🛑 مستبعد (Eliminated)</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select class="form-select form-select-sm" id="mem-filter-level">
+                <option value="ALL">جميع المستويات – Levels</option>
+                <option value="Level 0">Level 0</option>
+                <option value="Level 1">Level 1</option>
+                <option value="Level 2">Level 2</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select class="form-select form-select-sm" id="mem-filter-status">
+                <option value="ALL">حالة العضوية</option>
+                <option value="Active">نشط – Active</option>
+                <option value="Inactive">غير نشط</option>
+              </select>
+            </div>
+            <div class="col-md-1">
+              <button class="btn btn-primary btn-sm w-100" onclick="loadMembersTable()"><i class="fa-solid fa-filter"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="custom-card p-0 overflow-hidden">
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>كود العضوية – ID</th>
+                  <th>الاسم بالكامل</th>
+                  <th>الكارنيه</th>
+                  <th>المرحلة الحالية</th>
+                  <th>حالة التصفية</th>
+                  <th>المستوى التدريبي</th>
+                  <th>Codeforces</th>
+                  <th>الحالة</th>
+                  <th class="text-end">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="members-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: EVENTS & TRAININGS -->
+      <section id="tab-events" class="admin-tab-pane d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1">إدارة المسابقات والسيشنات – Events & Training Hub</h2>
+            <p class="text-secondary small mb-0">نشر السيشنات الأسبوعية، المسابقات التنافسية، والإعلانات الرسمية.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newTrainingModal">
+              <i class="fa-solid fa-plus ms-1"></i> سيشن تدريبية جديدة
+            </button>
+            <button class="btn-secondary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newEventModal">
+              <i class="fa-solid fa-trophy ms-1"></i> مسابقة جديدة
+            </button>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="custom-card">
+              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-chalkboard-user text-primary ms-2"></i> جدول السيشنات المقررة – Training Sessions</h3>
+              <div id="admin-trainings-list" class="vstack gap-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="custom-card">
+              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-trophy text-warning ms-2"></i> المسابقات المقررة – Scheduled Contests</h3>
+              <div id="admin-events-list" class="vstack gap-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: MANAGE ADMINS (Super Admin only) -->
+      <section id="tab-admins" class="admin-tab-pane d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1">إدارة حسابات المشرفين – Admin Management</h2>
+            <p class="text-secondary small mb-0">إضافة مشرفين جدد وتحديد الصلاحيات الإدارية (RBAC).</p>
+          </div>
+          <button class="btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newAdminModal">
+            <i class="fa-solid fa-user-plus ms-1"></i> إضافة مشرف جديد
+          </button>
+        </div>
+
+        <div class="custom-card p-0 overflow-hidden">
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>Admin ID</th>
+                  <th>الاسم بالكامل</th>
+                  <th>الإيميل</th>
+                  <th>الدور – Role</th>
+                  <th>الحالة</th>
+                  <th>آخر دخول</th>
+                  <th class="text-end">الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="admins-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: AUDIT ACTIVITY LOGS (Super Admin only) -->
+      <section id="tab-logs" class="admin-tab-pane d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1">سجل العمليات والأمان – Audit Activity Logs</h2>
+            <p class="text-secondary small mb-0">سجل غير قابل للتعديل يوثق جميع قرارات القبول والرفض وتسجيل الدخول.</p>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn-secondary-custom btn-sm" onclick="loadAuditLogs()">
+              <i class="fa-solid fa-rotate ms-1"></i> تحديث السجل
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="clearAuditLogsConfirm()">
+              <i class="fa-solid fa-trash-can ms-1"></i> تفريغ السجل (البدء من الصفر)
+            </button>
+          </div>
+        </div>
+
+        <div class="custom-card p-0 overflow-hidden">
+          <div class="table-responsive">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>التوقيت – Timestamp</th>
+                  <th>المشرف – Admin</th>
+                  <th>نوع العملية – Action</th>
+                  <th>الهدف – Entity</th>
+                  <th>الكود – ID</th>
+                  <th>تفاصيل التغيير – Details</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: ADMIN SELF PROFILE -->
+      <section id="tab-profile" class="admin-tab-pane d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+          <div>
+            <h2 class="h3 fw-bold text-white mb-1"><i class="fa-solid fa-id-card text-primary ms-2"></i> الملف الشخصي للمشرف – Admin Profile</h2>
+            <p class="text-secondary small mb-0">عرض وتعديل بياناتك الشخصية وتغيير كلمة المرور.</p>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Profile Info Card -->
+          <div class="col-lg-4">
+            <div class="custom-card text-center p-4">
+              <div class="mb-3" style="width:88px;height:88px;background:linear-gradient(135deg,#3B82F6,#8B5CF6);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:2.4rem;color:#fff;">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <h3 class="h5 fw-bold text-white mb-1" id="profile-disp-name">—</h3>
+              <span class="badge bg-danger mb-2" id="profile-disp-role">—</span>
+              <div class="text-secondary small mb-1" id="profile-disp-email">—</div>
+              <div class="text-secondary small" id="profile-disp-title">—</div>
+              <hr class="border-secondary my-3">
+              <ul class="list-unstyled text-start small mb-0">
+                <li class="py-2 border-bottom border-secondary border-opacity-25 d-flex justify-content-between">
+                  <span class="text-secondary">Admin ID:</span>
+                  <span class="text-info font-mono" id="profile-disp-id">—</span>
+                </li>
+                <li class="py-2 border-bottom border-secondary border-opacity-25 d-flex justify-content-between">
+                  <span class="text-secondary">تاريخ الإنشاء:</span>
+                  <span class="text-white font-mono" id="profile-disp-created">—</span>
+                </li>
+                <li class="py-2 d-flex justify-content-between">
+                  <span class="text-secondary">آخر تسجيل دخول:</span>
+                  <span class="text-white font-mono" id="profile-disp-lastlogin">—</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Edit Profile Form -->
+          <div class="col-lg-8">
+            <div class="custom-card p-4 mb-4">
+              <h4 class="h6 fw-bold text-white mb-4"><i class="fa-solid fa-user-pen text-primary ms-2"></i> تعديل البيانات الشخصية</h4>
+              <div id="admin-profile-alert" class="alert d-none mb-3" role="alert"></div>
+              <form id="admin-profile-form">
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small text-secondary">الاسم بالكامل – Full Name</label>
+                    <input type="text" class="form-control" id="prof-fullname" placeholder="اسمك الكامل" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small text-secondary">المسمى الوظيفي – Title (اختياري)</label>
+                    <input type="text" class="form-control" id="prof-title" placeholder="مثال: Head Coach, Reviewer...">
+                  </div>
+                </div>
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small text-secondary">البريد الإلكتروني – Email</label>
+                    <input type="email" class="form-control ltr-input" id="prof-email" placeholder="admin@example.com" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small text-secondary">رقم الهاتف – Phone (اختياري)</label>
+                    <input type="text" class="form-control ltr-input" id="prof-phone" placeholder="+20 1X XXXX XXXX">
+                  </div>
+                </div>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-4">
+                    <label class="form-label small text-secondary"><i class="fa-brands fa-codeforces text-warning ms-1"></i> Codeforces</label>
+                    <input type="text" class="form-control ltr-input" id="prof-cf" placeholder="Codeforces username">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-secondary"><i class="fa-brands fa-github text-light ms-1"></i> GitHub</label>
+                    <input type="text" class="form-control ltr-input" id="prof-github" placeholder="github.com/username">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-secondary"><i class="fa-brands fa-discord text-primary ms-1"></i> Discord</label>
+                    <input type="text" class="form-control ltr-input" id="prof-discord" placeholder="user#0000 or username">
+                  </div>
+                </div>
+                <button type="submit" class="btn-primary-custom" id="btn-save-admin-profile">
+                  <i class="fa-solid fa-floppy-disk ms-1"></i>
+                  <span id="save-admin-profile-text">حفظ التعديلات</span>
+                  <span id="save-admin-profile-spinner" class="spinner-border spinner-border-sm d-none ms-1" role="status"></span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Change Password Card -->
+            <div class="custom-card p-4">
+              <h4 class="h6 fw-bold text-white mb-4"><i class="fa-solid fa-lock text-warning ms-2"></i> تغيير كلمة المرور – Change Password</h4>
+              <div id="admin-pwd-alert" class="alert d-none mb-3" role="alert"></div>
+              <form id="admin-change-pwd-form">
+                <div class="row g-3 mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label small text-secondary">كلمة المرور الحالية</label>
+                    <div class="input-group">
+                      <input type="password" class="form-control ltr-input" id="prof-cur-pwd" placeholder="••••••••" required>
+                      <button class="btn toggle-pwd-btn" type="button" data-target="prof-cur-pwd" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-secondary">كلمة المرور الجديدة</label>
+                    <div class="input-group">
+                      <input type="password" class="form-control ltr-input" id="prof-new-pwd" placeholder="6 أحرف على الأقل" required minlength="6">
+                      <button class="btn toggle-pwd-btn" type="button" data-target="prof-new-pwd" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small text-secondary">تأكيد كلمة المرور</label>
+                    <div class="input-group">
+                      <input type="password" class="form-control ltr-input" id="prof-confirm-pwd" placeholder="••••••••" required minlength="6">
+                      <button class="btn toggle-pwd-btn" type="button" data-target="prof-confirm-pwd" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-warning text-dark fw-bold" id="btn-change-pwd">
+                  <i class="fa-solid fa-key ms-1"></i>
+                  <span id="change-pwd-text">تغيير كلمة المرور</span>
+                  <span id="change-pwd-spinner" class="spinner-border spinner-border-sm d-none ms-1" role="status"></span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- APPLICATION DETAILS & ACTION MODAL -->
+  <div class="modal fade" id="appDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white" id="modal-app-title">مراجعة طلب الانضمام – Application Review</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4" id="modal-app-body">
+          <!-- Dynamic details injected here -->
+        </div>
+        <div class="modal-footer modal-footer-custom d-flex justify-content-between flex-wrap gap-2" id="modal-app-footer">
+          <!-- Action buttons injected based on current role -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER PHASE & QUALIFICATION MODAL -->
+  <div class="modal fade" id="memberPhaseModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white"><i class="fa-solid fa-stairs text-warning ms-2"></i> إدارة مرحلة وتصفية العضو</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="member-phase-form">
+          <input type="hidden" id="phaseMemberId">
+          <div class="modal-body p-4">
+            <div class="mb-3 p-3 rounded-3" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
+              <div class="fw-bold text-white mb-1" id="phaseStudentName">-</div>
+              <div class="text-secondary small font-mono">Student ID: <span id="phaseStudentId" class="text-info">-</span></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">المرحلة التدريبية – Phase</label>
+              <select class="form-select" id="phaseSelect">
+                <option value="المرحلة 1">المرحلة 1 (Phase 1)</option>
+                <option value="المرحلة 2">المرحلة 2 (Phase 2)</option>
+                <option value="المرحلة 3">المرحلة 3 (Phase 3)</option>
+                <option value="المرحلة 4">المرحلة 4 (Phase 4)</option>
+                <option value="المرحلة 5">المرحلة 5 (Phase 5)</option>
+                <option value="CUSTOM">✏️ كتابة اسم مرحلة جديدة...</option>
+              </select>
+              <input type="text" class="form-control mt-2 d-none" id="customPhaseInput" placeholder="اكتب اسم المرحلة الجديدة...">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">حالة التصفية – Qualification Status</label>
+              <select class="form-select" id="phaseStatusSelect">
+                <option value="ACTIVE">⏳ مستمر في التدريب وحضور المحاضرات (Active)</option>
+                <option value="QUALIFIED">🎉 اجتاز امتحان التصفية وتأهل (Qualified)</option>
+                <option value="ELIMINATED">🛑 لم يجتز التصفية / استبعاد (Eliminated)</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">نتيجة الامتحان / السكور – Exam Score (اختياري)</label>
+              <input type="text" class="form-control" id="phaseScoreInput" placeholder="مثال: 5/5 Solved أو 85% أو Rank #12">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">ملاحظة للطالب – Note to Student (اختياري)</label>
+              <textarea class="form-control" id="phaseNotesInput" rows="2" placeholder="تظهر في بوابة الطالب، مثال: أحسنت في حل مسائل الكونتست!"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary">المستوى التدريبي (اختياري)</label>
+              <select class="form-select" id="phaseLevelSelect">
+                <option value="">بدون تغيير</option>
+                <option value="Level 0">Level 0 (Beginner)</option>
+                <option value="Level 1">Level 1 (Intermediate)</option>
+                <option value="Level 2">Level 2 (Advanced)</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn-primary-custom" id="btn-save-phase">
+              <i class="fa-solid fa-floppy-disk ms-1"></i> حفظ وتطبيق المرحلة
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE NEW ADMIN MODAL (Super Admin) -->
+  <div class="modal fade" id="newAdminModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white">إضافة مشرف جديد – Add Administrator</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="create-admin-form">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">الاسم بالكامل</label>
+              <input type="text" class="form-control" id="newAdminName" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">البريد الإلكتروني – Email</label>
+              <input type="email" class="form-control ltr-input" id="newAdminEmail" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">كلمة المرور الابتدائية – Password</label>
+              <div class="input-group">
+                <input type="password" class="form-control ltr-input" id="newAdminPassword" required minlength="8">
+                <button class="btn toggle-pwd-btn" type="button" data-target="newAdminPassword" title="إظهار / إخفاء كلمة المرور" tabindex="-1">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">الصلاحية – Role</label>
+              <select class="form-select" id="newAdminRole" required>
+                <option value="ADMIN">ADMIN (قبول/رفض الطلبات، إدارة الأعضاء)</option>
+                <option value="REVIEWER">REVIEWER (مراجعة الطلبات وإضافة ملاحظات التقييم)</option>
+                <option value="VIEWER">VIEWER (اطلاع فقط – Read-only)</option>
+                <option value="SUPER_ADMIN">SUPER_ADMIN (تحكم كامل)</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn-primary-custom">إنشاء الحساب</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE NEW TRAINING MODAL -->
+  <div class="modal fade" id="newTrainingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white">إضافة سيشن تدريبية – New Training Session</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="create-training-form">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">عنوان السيشن – Session Title</label>
+              <input type="text" class="form-control" id="trainTitle" placeholder="مثال: Dynamic Programming I: Memoization" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">المستوى – Level</label>
+                <select class="form-select" id="trainLevel">
+                  <option value="Level 0">Level 0</option>
+                  <option value="Level 1" selected>Level 1</option>
+                  <option value="Level 2">Level 2</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">المدرب – Instructor</label>
+                <input type="text" class="form-control" id="trainInstructor" placeholder="اسم المدرب" required>
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">الموعد – Date & Time</label>
+                <input type="datetime-local" class="form-control ltr-input" id="trainDateTime" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">المكان – Location</label>
+                <input type="text" class="form-control" id="trainLocation" value="معمل HTI Lab 304">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">وصف السيشن – Description</label>
+              <textarea class="form-control" id="trainDesc" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn-primary-custom">نشر السيشن</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE NEW EVENT MODAL -->
+  <div class="modal fade" id="newEventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white">إضافة مسابقة جديدة – New Contest / Event</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="create-event-form">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">اسم المسابقة – Event Title</label>
+              <input type="text" class="form-control" id="evTitle" placeholder="مثال: HTI Monthly Contest #2" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">النوع – Type</label>
+                <select class="form-select" id="evType">
+                  <option value="Contest">Contest – مسابقة</option>
+                  <option value="Bootcamp">Bootcamp – معسكر</option>
+                  <option value="Workshop">Workshop – ورشة عمل</option>
+                  <option value="ICPC Qualification">ICPC Qualification – تصفيات</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">المكان / المنصة – Platform</label>
+                <input type="text" class="form-control" id="evLocation" value="Codeforces Gym">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">بداية المسابقة – Start</label>
+                <input type="datetime-local" class="form-control ltr-input" id="evStart" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">نهاية المسابقة – End</label>
+                <input type="datetime-local" class="form-control ltr-input" id="evEnd" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">تفاصيل المسابقة – Description</label>
+              <textarea class="form-control" id="evDesc" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn-primary-custom">نشر المسابقة</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/mock-db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
