@@ -537,6 +537,74 @@ async function saveInternalNoteOnly() {
 // ================= TAB 3: MEMBERS DIRECTORY =================
 let cachedMembers = [];
 
+function renderMembersTableUI(membersList) {
+  const tbody = document.getElementById('members-table-body');
+  if (!tbody) return;
+
+  if (!membersList || membersList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">لا توجد بيانات أعضاء مطابقة للفلتر.</td></tr>';
+    return;
+  }
+
+  const sess = ApiService.getAdminSession();
+  const canManage = sess && ['SUPER_ADMIN', 'ADMIN'].includes(sess.admin.role);
+
+  tbody.innerHTML = membersList.map(m => {
+    const isAct = m.memberStatus === 'Active';
+    const curPhase = m.currentPhase || 'المرحلة 1';
+    const phaseSt = m.phaseStatus || 'ACTIVE';
+
+    let phaseBadge = `<span class="badge bg-info bg-opacity-25 text-info">${escapeHtml(curPhase)}</span>`;
+    let qualBadge = '';
+    if (phaseSt === 'QUALIFIED') {
+      qualBadge = `<span class="badge bg-success bg-opacity-25 text-success"><i class="fa-solid fa-check ms-1"></i>مؤهل للمرحلة التالية</span>`;
+    } else if (phaseSt === 'ELIMINATED') {
+      qualBadge = `<span class="badge bg-danger bg-opacity-25 text-danger"><i class="fa-solid fa-xmark ms-1"></i>لم يجتز التصفية</span>`;
+    } else {
+      qualBadge = `<span class="badge bg-warning bg-opacity-25 text-warning"><i class="fa-solid fa-hourglass-half ms-1"></i>مستمر في التدريب</span>`;
+    }
+
+    if (m.phaseScore) {
+      qualBadge += `<div class="small text-muted font-mono mt-1">السكور: ${escapeHtml(m.phaseScore)}</div>`;
+    }
+
+    return `
+      <tr>
+        <td><code class="text-primary">${escapeHtml(m.memberId)}</code></td>
+        <td>
+          <div class="fw-bold text-white">${escapeHtml(m.fullName)}</div>
+          <div class="text-muted small">${escapeHtml(m.universityEmail)}</div>
+        </td>
+        <td><code>${escapeHtml(m.studentId)}</code></td>
+        <td>${phaseBadge}</td>
+        <td>${qualBadge}</td>
+        <td><span class="badge bg-primary bg-opacity-25 text-primary">${escapeHtml(m.assignedLevel || 'Level 0')}</span></td>
+        <td>${m.codeforcesHandle ? `<a href="https://codeforces.com/profile/${m.codeforcesHandle}" target="_blank" class="small text-info">@${escapeHtml(m.codeforcesHandle)}</a>` : '<span class="text-muted small">None</span>'}</td>
+        <td>
+          <span class="badge ${isAct ? 'bg-success' : 'bg-secondary'}">${escapeHtml(m.memberStatus)}</span>
+        </td>
+        <td class="text-end">
+          ${canManage ? `
+            <div class="d-flex justify-content-end gap-1">
+              <button class="btn btn-sm btn-outline-warning" onclick="openMemberPhaseModal('${m.memberId}')" title="إدارة المرحلة والتصفية">
+                <i class="fa-solid fa-stairs"></i> تصفية
+              </button>
+              <button class="btn btn-sm ${isAct ? 'btn-outline-secondary' : 'btn-outline-success'}" onclick="toggleMemberActive('${m.memberId}', '${isAct ? 'Inactive' : 'Active'}')" title="${isAct ? 'تعطيل الحساب مؤقتاً' : 'تفعيل'}">
+                <i class="fa-solid fa-${isAct ? 'ban' : 'check'}"></i>
+              </button>
+              ${sess && sess.admin.role === 'SUPER_ADMIN' ? `
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMemberAccount('${m.memberId}', '${escapeHtml(m.fullName)}')" title="حذف حساب الطالب نهائياً من المنصة">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              ` : ''}
+            </div>
+          ` : '<span class="text-muted small">View Only</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 async function loadMembersTable() {
   const tbody = document.getElementById('members-table-body');
   if (!tbody) return;
@@ -561,69 +629,7 @@ async function loadMembersTable() {
     }
 
     cachedMembers = list;
-
-    if (cachedMembers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">لا توجد بيانات أعضاء مطابقة للفلتر.</td></tr>';
-      return;
-    }
-
-    const sess = ApiService.getAdminSession();
-    const canManage = sess && ['SUPER_ADMIN', 'ADMIN'].includes(sess.admin.role);
-
-    tbody.innerHTML = cachedMembers.map(m => {
-      const isAct = m.memberStatus === 'Active';
-      const curPhase = m.currentPhase || 'المرحلة 1';
-      const phaseSt = m.phaseStatus || 'ACTIVE';
-
-      let phaseBadge = `<span class="badge bg-info bg-opacity-25 text-info">${escapeHtml(curPhase)}</span>`;
-      let qualBadge = '';
-      if (phaseSt === 'QUALIFIED') {
-        qualBadge = `<span class="badge bg-success bg-opacity-25 text-success"><i class="fa-solid fa-check ms-1"></i>مؤهل للمرحلة التالية</span>`;
-      } else if (phaseSt === 'ELIMINATED') {
-        qualBadge = `<span class="badge bg-danger bg-opacity-25 text-danger"><i class="fa-solid fa-xmark ms-1"></i>لم يجتز التصفية</span>`;
-      } else {
-        qualBadge = `<span class="badge bg-warning bg-opacity-25 text-warning"><i class="fa-solid fa-hourglass-half ms-1"></i>مستمر في التدريب</span>`;
-      }
-
-      if (m.phaseScore) {
-        qualBadge += `<div class="small text-muted font-mono mt-1">السكور: ${escapeHtml(m.phaseScore)}</div>`;
-      }
-
-      return `
-        <tr>
-          <td><code class="text-primary">${escapeHtml(m.memberId)}</code></td>
-          <td>
-            <div class="fw-bold text-white">${escapeHtml(m.fullName)}</div>
-            <div class="text-muted small">${escapeHtml(m.universityEmail)}</div>
-          </td>
-          <td><code>${escapeHtml(m.studentId)}</code></td>
-          <td>${phaseBadge}</td>
-          <td>${qualBadge}</td>
-          <td><span class="badge bg-primary bg-opacity-25 text-primary">${escapeHtml(m.assignedLevel || 'Level 0')}</span></td>
-          <td>${m.codeforcesHandle ? `<a href="https://codeforces.com/profile/${m.codeforcesHandle}" target="_blank" class="small text-info">@${escapeHtml(m.codeforcesHandle)}</a>` : '<span class="text-muted small">None</span>'}</td>
-          <td>
-            <span class="badge ${isAct ? 'bg-success' : 'bg-secondary'}">${escapeHtml(m.memberStatus)}</span>
-          </td>
-          <td class="text-end">
-            ${canManage ? `
-              <div class="d-flex justify-content-end gap-1">
-                <button class="btn btn-sm btn-outline-warning" onclick="openMemberPhaseModal('${m.memberId}')" title="إدارة المرحلة والتصفية">
-                  <i class="fa-solid fa-stairs"></i> تصفية
-                </button>
-                <button class="btn btn-sm ${isAct ? 'btn-outline-secondary' : 'btn-outline-success'}" onclick="toggleMemberActive('${m.memberId}', '${isAct ? 'Inactive' : 'Active'}')" title="${isAct ? 'تعطيل الحساب مؤقتاً' : 'تفعيل'}">
-                  <i class="fa-solid fa-${isAct ? 'ban' : 'check'}"></i>
-                </button>
-                ${sess && sess.admin.role === 'SUPER_ADMIN' ? `
-                  <button class="btn btn-sm btn-outline-danger" onclick="deleteMemberAccount('${m.memberId}', '${escapeHtml(m.fullName)}')" title="حذف حساب الطالب نهائياً من المنصة">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                ` : ''}
-              </div>
-            ` : '<span class="text-muted small">View Only</span>'}
-          </td>
-        </tr>
-      `;
-    }).join('');
+    renderMembersTableUI(cachedMembers);
 
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">${escapeHtml(err.message)}</td></tr>`;
@@ -709,21 +715,34 @@ document.addEventListener('DOMContentLoaded', function() {
         level: document.getElementById('phaseLevelSelect').value || null
       };
 
+      // 1. Instant 0ms Optimistic Update in Memory
+      const targetMember = cachedMembers.find(x => x.memberId === memberId || x.studentId === memberId);
+      if (targetMember) {
+        targetMember.currentPhase = phaseVal;
+        targetMember.phaseStatus = phaseData.phaseStatus;
+        targetMember.phaseScore = phaseData.score;
+        targetMember.phaseNotes = phaseData.notes;
+        if (phaseData.level) targetMember.assignedLevel = phaseData.level;
+      }
+
+      // 2. Hide Modal & Show Toast Instantly (0ms delay)
+      const modalEl = document.getElementById('memberPhaseModal');
+      const modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+
+      const memberName = document.getElementById('phaseStudentName').textContent;
+      const phaseStatusAr = { 'ACTIVE': 'نشط', 'QUALIFIED': 'مؤهل ✅', 'ELIMINATED': 'لم يتأهل', 'PENDING_EXAM': 'بانتظار الامتحان' };
+      showToast(`🎉 تم ترقية <strong>${memberName}</strong> إلى <strong>${phaseVal}</strong> — الحالة: ${phaseStatusAr[phaseData.phaseStatus] || phaseData.phaseStatus}`, 'success', 5000);
+
+      // 3. Immediately re-render the table with the new badge (0ms)
+      renderMembersTableUI(cachedMembers);
+
+      // 4. Persist to Backend in Background
       try {
         await ApiService.updateMemberPhase(memberId, phaseData);
-
-        // Show success toast with member name and new phase
-        const memberName = document.getElementById('phaseStudentName').textContent;
-        const phaseStatusAr = { 'ACTIVE': 'نشط', 'QUALIFIED': 'مؤهل ✅', 'ELIMINATED': 'لم يتأهل', 'PENDING_EXAM': 'بانتظار الامتحان' };
-        showToast(`🎉 تم ترقية <strong>${memberName}</strong> إلى <strong>${phaseVal}</strong> — الحالة: ${phaseStatusAr[phaseData.phaseStatus] || phaseData.phaseStatus}`, 'success', 5000);
-
-        const modalEl = document.getElementById('memberPhaseModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if (modalInstance) modalInstance.hide();
-
-        loadMembersTable();
       } catch (err) {
-        showToast('فشل تحديث المرحلة: ' + err.message, 'error');
+        showToast('⚠️ تنبيه: فشل حفظ الترقية على الخادم: ' + err.message, 'error');
+        loadMembersTable(); // Revert/reload if failed
       } finally {
         saveBtn.disabled = false;
       }
@@ -733,12 +752,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function toggleMemberActive(memberId, newStatus) {
   if (!confirm(`Set member ${memberId} status to "${newStatus}"?`)) return;
+  const m = cachedMembers.find(x => x.memberId === memberId || x.studentId === memberId);
+  if (m) {
+    m.memberStatus = newStatus;
+    renderMembersTableUI(cachedMembers);
+  }
   try {
     await ApiService.updateMemberStatus(memberId, newStatus);
-    loadMembersTable();
     refreshDashboardStats();
   } catch (err) {
     showToast('فشل تحديث حالة العضو: ' + err.message, 'error');
+    loadMembersTable();
   }
 }
 
@@ -746,10 +770,97 @@ async function toggleMemberActive(memberId, newStatus) {
 let cachedAdminTrainings = [];
 let cachedAdminEvents = [];
 
-async function loadEventsAndTrainings() {
+function renderEventsAndTrainingsUI() {
   const trainContainer = document.getElementById('admin-trainings-list');
   const evContainer = document.getElementById('admin-events-list');
 
+  if (trainContainer) {
+    if (!cachedAdminTrainings || cachedAdminTrainings.length === 0) {
+      trainContainer.innerHTML = '<p class="text-muted small p-3">لا توجد سيشنات تدريبية مضافة حالياً.</p>';
+    } else {
+      trainContainer.innerHTML = cachedAdminTrainings.map(t => {
+        const isCompleted = t.status === 'Completed';
+        const statusBadge = isCompleted
+          ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-circle-check ms-1"></i>مكتملة (مخفية)</span>`
+          : `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-30"><i class="fa-solid fa-clock ms-1"></i>قادمة (نشطة)</span>`;
+
+        const completeBtn = !isCompleted
+          ? `<button class="btn btn-sm btn-outline-success" onclick="completeTrainingAction('${t.sessionId}')" title="تحديد كـ مكتملة وإخفائها من الطلاب">
+               <i class="fa-solid fa-check ms-1"></i>إنهاء
+             </button>`
+          : '';
+
+        return `
+          <div class="dashboard-item-card mb-2 ${isCompleted ? 'opacity-75' : ''}">
+            <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+              <div class="d-flex align-items-center gap-1">
+                <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-30">${escapeHtml(t.level || 'All')}</span>
+                ${statusBadge}
+              </div>
+              <span class="small text-light text-opacity-75">${new Date(t.dateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+            <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(t.title)}</h5>
+            <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
+              <div>
+                <span class="me-3"><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> ${escapeHtml(t.instructor)}</span>
+                <span class="location-badge"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(t.location)}</span>
+              </div>
+              <div class="d-flex gap-1">
+                ${completeBtn}
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteTrainingAction('${t.sessionId}')" title="حذف السيشن التدريبية نهائياً">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  if (evContainer) {
+    if (!cachedAdminEvents || cachedAdminEvents.length === 0) {
+      evContainer.innerHTML = '<p class="text-muted small p-3">لا توجد مسابقات مضافة حالياً.</p>';
+    } else {
+      evContainer.innerHTML = cachedAdminEvents.map(ev => {
+        const isPast = ev.status === 'Past';
+        const statusBadge = isPast
+          ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-flag-checkered ms-1"></i>انتهت (مخفية)</span>`
+          : `<span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30"><i class="fa-solid fa-bolt ms-1"></i>قادمة (نشطة)</span>`;
+
+        const completeBtn = !isPast
+          ? `<button class="btn btn-sm btn-outline-success" onclick="completeEventAction('${ev.eventId}')" title="تحديد كـ انتهت وإخفائها من الموقع">
+               <i class="fa-solid fa-flag-checkered ms-1"></i>إنهاء المسابقة
+             </button>`
+          : '';
+
+        return `
+          <div class="dashboard-item-card mb-2 ${isPast ? 'opacity-75' : ''}">
+            <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+              <div class="d-flex align-items-center gap-1">
+                <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30">${escapeHtml(ev.type)}</span>
+                ${statusBadge}
+              </div>
+              <span class="small text-light text-opacity-75">${new Date(ev.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+            </div>
+            <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(ev.title)}</h5>
+            <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
+              <span class="location-badge-event"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(ev.location)}</span>
+              <div class="d-flex gap-1">
+                ${completeBtn}
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteEventAction('${ev.eventId}')" title="حذف المسابقة نهائياً">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+async function loadEventsAndTrainings() {
   try {
     let data;
     try {
@@ -760,91 +871,7 @@ async function loadEventsAndTrainings() {
 
     cachedAdminTrainings = data.trainings || [];
     cachedAdminEvents = data.events || [];
-
-    if (trainContainer) {
-      if (!cachedAdminTrainings || cachedAdminTrainings.length === 0) {
-        trainContainer.innerHTML = '<p class="text-muted small p-3">لا توجد سيشنات تدريبية مضافة حالياً.</p>';
-      } else {
-        trainContainer.innerHTML = cachedAdminTrainings.map(t => {
-          const isCompleted = t.status === 'Completed';
-          const statusBadge = isCompleted
-            ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-circle-check ms-1"></i>مكتملة (مخفية)</span>`
-            : `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-30"><i class="fa-solid fa-clock ms-1"></i>قادمة (نشطة)</span>`;
-
-          const completeBtn = !isCompleted
-            ? `<button class="btn btn-sm btn-outline-success" onclick="completeTrainingAction('${t.sessionId}')" title="تحديد كـ مكتملة وإخفائها من الطلاب">
-                 <i class="fa-solid fa-check ms-1"></i>إنهاء
-               </button>`
-            : '';
-
-          return `
-            <div class="dashboard-item-card mb-2 ${isCompleted ? 'opacity-75' : ''}">
-              <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
-                <div class="d-flex align-items-center gap-1">
-                  <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-30">${escapeHtml(t.level || 'All')}</span>
-                  ${statusBadge}
-                </div>
-                <span class="small text-light text-opacity-75">${new Date(t.dateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(t.title)}</h5>
-              <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
-                <div>
-                  <span class="me-3"><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> ${escapeHtml(t.instructor)}</span>
-                  <span class="location-badge"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(t.location)}</span>
-                </div>
-                <div class="d-flex gap-1">
-                  ${completeBtn}
-                  <button class="btn btn-sm btn-outline-danger" onclick="deleteTrainingAction('${t.sessionId}')" title="حذف السيشن التدريبية نهائياً">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-
-    if (evContainer) {
-      if (!cachedAdminEvents || cachedAdminEvents.length === 0) {
-        evContainer.innerHTML = '<p class="text-muted small p-3">لا توجد مسابقات مضافة حالياً.</p>';
-      } else {
-        evContainer.innerHTML = cachedAdminEvents.map(ev => {
-          const isPast = ev.status === 'Past';
-          const statusBadge = isPast
-            ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-flag-checkered ms-1"></i>انتهت (مخفية)</span>`
-            : `<span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30"><i class="fa-solid fa-bolt ms-1"></i>قادمة (نشطة)</span>`;
-
-          const completeBtn = !isPast
-            ? `<button class="btn btn-sm btn-outline-success" onclick="completeEventAction('${ev.eventId}')" title="تحديد كـ انتهت وإخفائها من الموقع">
-                 <i class="fa-solid fa-flag-checkered ms-1"></i>إنهاء المسابقة
-               </button>`
-            : '';
-
-          return `
-            <div class="dashboard-item-card mb-2 ${isPast ? 'opacity-75' : ''}">
-              <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
-                <div class="d-flex align-items-center gap-1">
-                  <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30">${escapeHtml(ev.type)}</span>
-                  ${statusBadge}
-                </div>
-                <span class="small text-light text-opacity-75">${new Date(ev.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-              </div>
-              <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(ev.title)}</h5>
-              <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
-                <span class="location-badge-event"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(ev.location)}</span>
-                <div class="d-flex gap-1">
-                  ${completeBtn}
-                  <button class="btn btn-sm btn-outline-danger" onclick="deleteEventAction('${ev.eventId}')" title="حذف المسابقة نهائياً">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-    }
+    renderEventsAndTrainingsUI();
 
   } catch (err) {
     console.warn(err);
@@ -855,12 +882,17 @@ async function deleteTrainingAction(sessionId) {
   const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
   const title = t ? t.title : sessionId;
   if (!confirm(`هل أنت متأكد من حذف السيشن التدريبية "${title}" نهائياً من النظام؟`)) return;
+
+  // Instant Optimistic Update (0ms)
+  cachedAdminTrainings = cachedAdminTrainings.filter(x => x.sessionId !== sessionId);
+  renderEventsAndTrainingsUI();
+  showToast(`تم حذف السيشن التدريبية "${title}" بنجاح 🗑️`, 'success');
+
   try {
     await ApiService.deleteTraining(sessionId);
-    showToast(`تم حذف السيشن التدريبية "${title}" بنجاح 🗑️`, 'success');
-    loadEventsAndTrainings();
   } catch (err) {
-    showToast('فشل حذف السيشن التدريبية: ' + err.message, 'error');
+    showToast('⚠️ فشل حذف السيشن على الخادم: ' + err.message, 'error');
+    loadEventsAndTrainings();
   }
 }
 
@@ -868,12 +900,17 @@ async function completeTrainingAction(sessionId) {
   const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
   const title = t ? t.title : sessionId;
   if (!confirm(`هل أنت متأكد من تعليم السيشن التدريبية "${title}" كمكتملة؟\nلن تظهر للطلاب في الصفحة الرئيسية أو البوابة.`)) return;
+
+  // Instant Optimistic Update (0ms)
+  if (t) t.status = 'Completed';
+  renderEventsAndTrainingsUI();
+  showToast(`تم إنهاء السيشن "${title}" وتحديدها كمكتملة ✅`, 'success');
+
   try {
     await ApiService.completeTraining(sessionId);
-    showToast(`تم إنهاء السيشن "${title}" وتحديدها كمكتملة ✅`, 'success');
-    loadEventsAndTrainings();
   } catch (err) {
-    showToast('فشل تحديث حالة السيشن: ' + err.message, 'error');
+    showToast('⚠️ فشل تحديث حالة السيشن على الخادم: ' + err.message, 'error');
+    loadEventsAndTrainings();
   }
 }
 
@@ -881,12 +918,17 @@ async function deleteEventAction(eventId) {
   const ev = cachedAdminEvents.find(x => x.eventId === eventId);
   const title = ev ? ev.title : eventId;
   if (!confirm(`هل أنت متأكد من حذف المسابقة "${title}" نهائياً من النظام؟`)) return;
+
+  // Instant Optimistic Update (0ms)
+  cachedAdminEvents = cachedAdminEvents.filter(x => x.eventId !== eventId);
+  renderEventsAndTrainingsUI();
+  showToast(`تم حذف المسابقة "${title}" بنجاح 🗑️`, 'success');
+
   try {
     await ApiService.deleteEvent(eventId);
-    showToast(`تم حذف المسابقة "${title}" بنجاح 🗑️`, 'success');
-    loadEventsAndTrainings();
   } catch (err) {
-    showToast('فشل حذف المسابقة: ' + err.message, 'error');
+    showToast('⚠️ فشل حذف المسابقة على الخادم: ' + err.message, 'error');
+    loadEventsAndTrainings();
   }
 }
 
@@ -894,12 +936,17 @@ async function completeEventAction(eventId) {
   const ev = cachedAdminEvents.find(x => x.eventId === eventId);
   const title = ev ? ev.title : eventId;
   if (!confirm(`هل أنت متأكد من تعليم المسابقة "${title}" كمنتهية؟\nستختفي تلقائياً من قائمة المسابقات القادمة في الموقع.`)) return;
+
+  // Instant Optimistic Update (0ms)
+  if (ev) ev.status = 'Past';
+  renderEventsAndTrainingsUI();
+  showToast(`تم إنهاء المسابقة "${title}" بنجاح وإخفائها من المسابقات القادمة 🏁`, 'success');
+
   try {
     await ApiService.completeEvent(eventId);
-    showToast(`تم إنهاء المسابقة "${title}" بنجاح وإخفائها من المسابقات القادمة 🏁`, 'success');
-    loadEventsAndTrainings();
   } catch (err) {
-    showToast('فشل تحديث حالة المسابقة: ' + err.message, 'error');
+    showToast('⚠️ فشل تحديث حالة المسابقة على الخادم: ' + err.message, 'error');
+    loadEventsAndTrainings();
   }
 }
 
