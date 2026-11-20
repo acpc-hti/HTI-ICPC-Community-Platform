@@ -103,7 +103,7 @@ ACPC_HTI/
 │   └── schema.md                  # مخطط قاعدة البيانات (11 جدول)
 │
 ├── 📁 test/
-│   └── test-runner.js             # اختبارات تلقائية (32 اختبار)
+│   └── test-runner.js             # اختبارات تلقائية (40 اختبار)
 │
 ├── vercel.json                    # إعدادات Vercel
 └── README.md
@@ -184,8 +184,9 @@ node test/test-runner.js
 ✅ Suite 5: Application Review Pipeline ........ PASS
 ✅ Suite 6: Member Auto-Promotion .............. PASS
 ✅ Suite 7: Account Deletion & Log Clearing .... PASS
+✅ Suite 8: Events & Training Management ....... PASS
 
-📊 Result: 32/32 PASS
+📊 Result: 40/40 PASS
 ```
 
 ---

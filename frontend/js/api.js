@@ -331,6 +331,51 @@ const ApiService = (function() {
       return await postGAS({ action: 'create_training', token: sess.token, ...data });
     },
 
+    deleteEvent: async function(eventId) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.deleteEvent(sess.admin, eventId);
+      }
+      return await postGAS({ action: 'delete_event', token: sess.token, eventId });
+    },
+
+    deleteTraining: async function(sessionId) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.deleteTraining(sess.admin, sessionId);
+      }
+      return await postGAS({ action: 'delete_training', token: sess.token, sessionId });
+    },
+
+    completeEvent: async function(eventId) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.completeEvent(sess.admin, eventId);
+      }
+      return await postGAS({ action: 'complete_event', token: sess.token, eventId });
+    },
+
+    completeTraining: async function(sessionId) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.completeTraining(sess.admin, sessionId);
+      }
+      return await postGAS({ action: 'complete_training', token: sess.token, sessionId });
+    },
+
+    getAdminEventsAndTrainings: async function() {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.getAdminEventsAndTrainings();
+      }
+      return await postGAS({ action: 'admin_events_trainings', token: sess.token });
+    },
+
     // ================= MEMBER PORTAL =================
     memberLogin: async function(email, studentId) {
       let result;

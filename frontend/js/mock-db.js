@@ -956,6 +956,99 @@ const MockDB = (function() {
       return trn;
     },
 
+    // Delete Event
+    deleteEvent: async function(adminUser, eventId) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const idx = db.Events.findIndex(e => e.eventId === eventId);
+      if (idx === -1) throw new Error('Event not found.');
+      const removed = db.Events.splice(idx, 1)[0];
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'DELETE_EVENT',
+        targetEntity: 'Event',
+        targetId: eventId,
+        details: `Deleted event: ${removed.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return { success: true, eventId };
+    },
+
+    // Delete Training
+    deleteTraining: async function(adminUser, sessionId) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const idx = db.TrainingSessions.findIndex(t => t.sessionId === sessionId);
+      if (idx === -1) throw new Error('Training session not found.');
+      const removed = db.TrainingSessions.splice(idx, 1)[0];
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'DELETE_TRAINING',
+        targetEntity: 'Training',
+        targetId: sessionId,
+        details: `Deleted training: ${removed.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return { success: true, sessionId };
+    },
+
+    // Complete Event (mark as Past)
+    completeEvent: async function(adminUser, eventId) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const ev = db.Events.find(e => e.eventId === eventId);
+      if (!ev) throw new Error('Event not found.');
+      ev.status = 'Past';
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'COMPLETE_EVENT',
+        targetEntity: 'Event',
+        targetId: eventId,
+        details: `Marked event as completed: ${ev.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return { success: true, eventId };
+    },
+
+    // Complete Training (mark as Completed)
+    completeTraining: async function(adminUser, sessionId) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const trn = db.TrainingSessions.find(t => t.sessionId === sessionId);
+      if (!trn) throw new Error('Training session not found.');
+      trn.status = 'Completed';
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'COMPLETE_TRAINING',
+        targetEntity: 'Training',
+        targetId: sessionId,
+        details: `Marked training as completed: ${trn.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return { success: true, sessionId };
+    },
+
+    // Get ALL events & trainings for admin (including completed/past)
+    getAdminEventsAndTrainings: async function() {
+      const db = getDB();
+      return {
+        trainings: db.TrainingSessions,
+        events: db.Events
+      };
+    },
+
     // Update Member Self Profile
     updateMemberProfile: async function(member, updates) {
       const db = getDB();

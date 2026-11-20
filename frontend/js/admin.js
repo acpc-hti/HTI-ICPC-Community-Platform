@@ -6,6 +6,32 @@ let statusChartInstance = null;
 let yearChartInstance = null;
 let currentSelectedApplication = null;
 
+// ================= TOAST NOTIFICATION SYSTEM =================
+const TOAST_ICONS = {
+  success: 'fa-circle-check',
+  error: 'fa-circle-xmark',
+  info: 'fa-circle-info',
+  warning: 'fa-triangle-exclamation'
+};
+
+function showToast(message, type = 'success', duration = 4000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) { alert(message); return; }
+
+  const toast = document.createElement('div');
+  toast.className = `toast-custom toast-${type}`;
+  toast.style.setProperty('--toast-duration', `${duration / 1000}s`);
+  toast.innerHTML = `
+    <i class="fa-solid ${TOAST_ICONS[type] || TOAST_ICONS.info} toast-icon"></i>
+    <div class="toast-body-text">${message}</div>
+    <button class="toast-close-btn" onclick="this.parentElement.remove()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  `;
+  container.appendChild(toast);
+  setTimeout(() => { if (toast.parentElement) toast.remove(); }, duration + 500);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initAdminAuth();
   setupNavigation();
@@ -473,7 +499,8 @@ async function executeDecision(status) {
       note
     );
 
-    alert(`Application successfully updated to "${status}"!`);
+    const statusAr = { 'Approved': '✅ تم قبول الطلب', 'Rejected': '❌ تم رفض الطلب', 'Under Review': '🔍 قيد المراجعة', 'Waitlisted': '⏳ في قائمة الانتظار' };
+    showToast(statusAr[status] || `تم تحديث الحالة إلى "${status}"`, status === 'Approved' ? 'success' : status === 'Rejected' ? 'error' : 'info');
     
     // Close modal
     const modalEl = bootstrap.Modal.getInstance(document.getElementById('appDetailsModal'));
@@ -485,7 +512,7 @@ async function executeDecision(status) {
     loadMembersTable();
 
   } catch (err) {
-    alert('Error updating status: ' + err.message);
+    showToast('فشل تحديث حالة الطلب: ' + err.message, 'error');
   }
 }
 
@@ -498,12 +525,12 @@ async function saveInternalNoteOnly() {
       currentSelectedApplication.status,
       note
     );
-    alert('Review note recorded successfully!');
+    showToast('تم حفظ الملاحظة الداخلية بنجاح ✏️', 'info');
     const modalEl = bootstrap.Modal.getInstance(document.getElementById('appDetailsModal'));
     if (modalEl) modalEl.hide();
     loadApplicationsTable();
   } catch (err) {
-    alert('Error saving note: ' + err.message);
+    showToast('فشل حفظ الملاحظة: ' + err.message, 'error');
   }
 }
 
@@ -667,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const phaseVal = selectVal === 'CUSTOM' ? document.getElementById('customPhaseInput').value.trim() : selectVal;
 
       if (!phaseVal) {
-        alert('يرجى تحديد أو كتابة اسم المرحلة.');
+        showToast('⚠️ يرجى تحديد أو كتابة اسم المرحلة.', 'warning');
         return;
       }
 
@@ -685,13 +712,18 @@ document.addEventListener('DOMContentLoaded', function() {
       try {
         await ApiService.updateMemberPhase(memberId, phaseData);
 
+        // Show success toast with member name and new phase
+        const memberName = document.getElementById('phaseStudentName').textContent;
+        const phaseStatusAr = { 'ACTIVE': 'نشط', 'QUALIFIED': 'مؤهل ✅', 'ELIMINATED': 'لم يتأهل', 'PENDING_EXAM': 'بانتظار الامتحان' };
+        showToast(`🎉 تم ترقية <strong>${memberName}</strong> إلى <strong>${phaseVal}</strong> — الحالة: ${phaseStatusAr[phaseData.phaseStatus] || phaseData.phaseStatus}`, 'success', 5000);
+
         const modalEl = document.getElementById('memberPhaseModal');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         if (modalInstance) modalInstance.hide();
 
         loadMembersTable();
       } catch (err) {
-        alert('فشل تحديث المرحلة: ' + err.message);
+        showToast('فشل تحديث المرحلة: ' + err.message, 'error');
       } finally {
         saveBtn.disabled = false;
       }
@@ -706,59 +738,168 @@ async function toggleMemberActive(memberId, newStatus) {
     loadMembersTable();
     refreshDashboardStats();
   } catch (err) {
-    alert('Failed to update member: ' + err.message);
+    showToast('فشل تحديث حالة العضو: ' + err.message, 'error');
   }
 }
 
 // ================= TAB 4: EVENTS & TRAININGS =================
+let cachedAdminTrainings = [];
+let cachedAdminEvents = [];
+
 async function loadEventsAndTrainings() {
   const trainContainer = document.getElementById('admin-trainings-list');
   const evContainer = document.getElementById('admin-events-list');
 
   try {
-    const pub = await ApiService.getPublicData();
+    let data;
+    try {
+      data = await ApiService.getAdminEventsAndTrainings();
+    } catch (e) {
+      data = await ApiService.getPublicData();
+    }
+
+    cachedAdminTrainings = data.trainings || [];
+    cachedAdminEvents = data.events || [];
 
     if (trainContainer) {
-      if (!pub.trainings || pub.trainings.length === 0) {
-        trainContainer.innerHTML = '<p class="text-muted small p-3">No sessions scheduled.</p>';
+      if (!cachedAdminTrainings || cachedAdminTrainings.length === 0) {
+        trainContainer.innerHTML = '<p class="text-muted small p-3">لا توجد سيشنات تدريبية مضافة حالياً.</p>';
       } else {
-        trainContainer.innerHTML = pub.trainings.map(t => `
-          <div class="dashboard-item-card mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-30">${escapeHtml(t.level || 'All')}</span>
-              <span class="small text-light text-opacity-75">${new Date(t.dateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+        trainContainer.innerHTML = cachedAdminTrainings.map(t => {
+          const isCompleted = t.status === 'Completed';
+          const statusBadge = isCompleted
+            ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-circle-check ms-1"></i>مكتملة (مخفية)</span>`
+            : `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-30"><i class="fa-solid fa-clock ms-1"></i>قادمة (نشطة)</span>`;
+
+          const completeBtn = !isCompleted
+            ? `<button class="btn btn-sm btn-outline-success" onclick="completeTrainingAction('${t.sessionId}')" title="تحديد كـ مكتملة وإخفائها من الطلاب">
+                 <i class="fa-solid fa-check ms-1"></i>إنهاء
+               </button>`
+            : '';
+
+          return `
+            <div class="dashboard-item-card mb-2 ${isCompleted ? 'opacity-75' : ''}">
+              <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-30">${escapeHtml(t.level || 'All')}</span>
+                  ${statusBadge}
+                </div>
+                <span class="small text-light text-opacity-75">${new Date(t.dateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(t.title)}</h5>
+              <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
+                <div>
+                  <span class="me-3"><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> ${escapeHtml(t.instructor)}</span>
+                  <span class="location-badge"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(t.location)}</span>
+                </div>
+                <div class="d-flex gap-1">
+                  ${completeBtn}
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteTrainingAction('${t.sessionId}')" title="حذف السيشن التدريبية نهائياً">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
             </div>
-            <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(t.title)}</h5>
-            <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10">
-              <span><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> ${escapeHtml(t.instructor)}</span>
-              <span class="location-badge"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(t.location)}</span>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
     if (evContainer) {
-      if (!pub.events || pub.events.length === 0) {
-        evContainer.innerHTML = '<p class="text-muted small p-3">No events scheduled.</p>';
+      if (!cachedAdminEvents || cachedAdminEvents.length === 0) {
+        evContainer.innerHTML = '<p class="text-muted small p-3">لا توجد مسابقات مضافة حالياً.</p>';
       } else {
-        evContainer.innerHTML = pub.events.map(ev => `
-          <div class="dashboard-item-card mb-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30">${escapeHtml(ev.type)}</span>
-              <span class="small text-light text-opacity-75">${new Date(ev.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+        evContainer.innerHTML = cachedAdminEvents.map(ev => {
+          const isPast = ev.status === 'Past';
+          const statusBadge = isPast
+            ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-flag-checkered ms-1"></i>انتهت (مخفية)</span>`
+            : `<span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30"><i class="fa-solid fa-bolt ms-1"></i>قادمة (نشطة)</span>`;
+
+          const completeBtn = !isPast
+            ? `<button class="btn btn-sm btn-outline-success" onclick="completeEventAction('${ev.eventId}')" title="تحديد كـ انتهت وإخفائها من الموقع">
+                 <i class="fa-solid fa-flag-checkered ms-1"></i>إنهاء المسابقة
+               </button>`
+            : '';
+
+          return `
+            <div class="dashboard-item-card mb-2 ${isPast ? 'opacity-75' : ''}">
+              <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30">${escapeHtml(ev.type)}</span>
+                  ${statusBadge}
+                </div>
+                <span class="small text-light text-opacity-75">${new Date(ev.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+              </div>
+              <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(ev.title)}</h5>
+              <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
+                <span class="location-badge-event"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(ev.location)}</span>
+                <div class="d-flex gap-1">
+                  ${completeBtn}
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteEventAction('${ev.eventId}')" title="حذف المسابقة نهائياً">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
             </div>
-            <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(ev.title)}</h5>
-            <div class="small text-light text-opacity-80 mt-2 pt-2 border-top border-light border-opacity-10">
-              <span class="location-badge-event"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(ev.location)}</span>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     }
 
   } catch (err) {
     console.warn(err);
+  }
+}
+
+async function deleteTrainingAction(sessionId) {
+  const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
+  const title = t ? t.title : sessionId;
+  if (!confirm(`هل أنت متأكد من حذف السيشن التدريبية "${title}" نهائياً من النظام؟`)) return;
+  try {
+    await ApiService.deleteTraining(sessionId);
+    showToast(`تم حذف السيشن التدريبية "${title}" بنجاح 🗑️`, 'success');
+    loadEventsAndTrainings();
+  } catch (err) {
+    showToast('فشل حذف السيشن التدريبية: ' + err.message, 'error');
+  }
+}
+
+async function completeTrainingAction(sessionId) {
+  const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
+  const title = t ? t.title : sessionId;
+  if (!confirm(`هل أنت متأكد من تعليم السيشن التدريبية "${title}" كمكتملة؟\nلن تظهر للطلاب في الصفحة الرئيسية أو البوابة.`)) return;
+  try {
+    await ApiService.completeTraining(sessionId);
+    showToast(`تم إنهاء السيشن "${title}" وتحديدها كمكتملة ✅`, 'success');
+    loadEventsAndTrainings();
+  } catch (err) {
+    showToast('فشل تحديث حالة السيشن: ' + err.message, 'error');
+  }
+}
+
+async function deleteEventAction(eventId) {
+  const ev = cachedAdminEvents.find(x => x.eventId === eventId);
+  const title = ev ? ev.title : eventId;
+  if (!confirm(`هل أنت متأكد من حذف المسابقة "${title}" نهائياً من النظام؟`)) return;
+  try {
+    await ApiService.deleteEvent(eventId);
+    showToast(`تم حذف المسابقة "${title}" بنجاح 🗑️`, 'success');
+    loadEventsAndTrainings();
+  } catch (err) {
+    showToast('فشل حذف المسابقة: ' + err.message, 'error');
+  }
+}
+
+async function completeEventAction(eventId) {
+  const ev = cachedAdminEvents.find(x => x.eventId === eventId);
+  const title = ev ? ev.title : eventId;
+  if (!confirm(`هل أنت متأكد من تعليم المسابقة "${title}" كمنتهية؟\nستختفي تلقائياً من قائمة المسابقات القادمة في الموقع.`)) return;
+  try {
+    await ApiService.completeEvent(eventId);
+    showToast(`تم إنهاء المسابقة "${title}" بنجاح وإخفائها من المسابقات القادمة 🏁`, 'success');
+    loadEventsAndTrainings();
+  } catch (err) {
+    showToast('فشل تحديث حالة المسابقة: ' + err.message, 'error');
   }
 }
 
@@ -809,7 +950,7 @@ async function toggleAdminStatus(adminId, status) {
     await ApiService.updateAdmin(adminId, { status: status });
     loadAdminsTable();
   } catch (err) {
-    alert('فشل تحديث المشرف: ' + err.message);
+    showToast('فشل تحديث حالة المشرف: ' + err.message, 'error');
   }
 }
 
@@ -817,10 +958,10 @@ async function deleteAdminAccount(adminId, adminName) {
   if (!confirm(`هل أنت متأكد من حذف حساب الأدمن "${adminName}" نهائياً من النظام؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
   try {
     await ApiService.deleteAdmin(adminId);
-    alert('تم حذف حساب الأدمن بنجاح!');
+    showToast(`تم حذف حساب الأدمن "${adminName}" بنجاح 🗑️`, 'success');
     loadAdminsTable();
   } catch (err) {
-    alert('فشل حذف حساب الأدمن: ' + err.message);
+    showToast('فشل حذف حساب الأدمن: ' + err.message, 'error');
   }
 }
 
@@ -828,10 +969,10 @@ async function deleteMemberAccount(memberId, memberName) {
   if (!confirm(`تحذير هام: هل أنت متأكد من حذف حساب الطالب "${memberName}" نهائياً من قاعدة البيانات والمنصة؟`)) return;
   try {
     await ApiService.deleteMember(memberId);
-    alert('تم حذف حساب الطالب بنجاح!');
+    showToast(`تم حذف حساب الطالب "${memberName}" بنجاح 🗑️`, 'success');
     loadMembersTable();
   } catch (err) {
-    alert('فشل حذف حساب الطالب: ' + err.message);
+    showToast('فشل حذف حساب الطالب: ' + err.message, 'error');
   }
 }
 
@@ -870,10 +1011,10 @@ async function clearAuditLogsConfirm() {
   if (!confirm('هل أنت متأكد من رغبتك في تفريغ ومسح سجل العمليات والأمان بالكامل؟\nسيتم مسح جميع السجلات والبدء من الصفر.')) return;
   try {
     await ApiService.clearLogs();
-    alert('تم تفريغ سجل العمليات بنجاح والبدء من الصفر!');
+    showToast('تم تفريغ سجل العمليات بنجاح والبدء من الصفر! 🧹', 'success');
     loadAuditLogs();
   } catch (err) {
-    alert('فشل تفريغ السجل: ' + err.message);
+    showToast('فشل تفريغ السجل: ' + err.message, 'error');
   }
 }
 
@@ -892,13 +1033,13 @@ function setupModalsAndForms() {
       };
       try {
         await ApiService.createAdmin(data);
-        alert('Administrator created successfully!');
+        showToast('تم إنشاء حساب المشرف الجديد بنجاح! 🛡️', 'success');
         const modal = bootstrap.Modal.getInstance(document.getElementById('newAdminModal'));
         if (modal) modal.hide();
         createAdminForm.reset();
         loadAdminsTable();
       } catch (err) {
-        alert('Failed to create admin: ' + err.message);
+        showToast('فشل إنشاء حساب المشرف: ' + err.message, 'error');
       }
     });
   }
@@ -918,13 +1059,13 @@ function setupModalsAndForms() {
       };
       try {
         await ApiService.createTraining(data);
-        alert('Training session published successfully!');
+        showToast('تم نشر جلسة التدريب بنجاح! 📚', 'success');
         const modal = bootstrap.Modal.getInstance(document.getElementById('newTrainingModal'));
         if (modal) modal.hide();
         createTrainForm.reset();
         loadEventsAndTrainings();
       } catch (err) {
-        alert('Failed to create training session: ' + err.message);
+        showToast('فشل نشر جلسة التدريب: ' + err.message, 'error');
       }
     });
   }
@@ -944,13 +1085,13 @@ function setupModalsAndForms() {
       };
       try {
         await ApiService.createEvent(data);
-        alert('Event published successfully!');
+        showToast('تم نشر الحدث بنجاح! 🏆', 'success');
         const modal = bootstrap.Modal.getInstance(document.getElementById('newEventModal'));
         if (modal) modal.hide();
         createEvForm.reset();
         loadEventsAndTrainings();
       } catch (err) {
-        alert('Failed to create event: ' + err.message);
+        showToast('فشل نشر الحدث: ' + err.message, 'error');
       }
     });
   }
@@ -959,7 +1100,7 @@ function setupModalsAndForms() {
 // ================= CSV EXPORT UTILITIES =================
 function exportApplicationsCSV() {
   if (cachedApplications.length === 0) {
-    alert('No applications to export.');
+    showToast('لا توجد طلبات للتصدير.', 'warning');
     return;
   }
   const headers = ['Application ID', 'Full Name', 'Student ID', 'Email', 'Phone', 'Department', 'Year', 'Experience', 'Codeforces', 'Status', 'Submitted At'];
@@ -981,7 +1122,7 @@ function exportApplicationsCSV() {
 
 function exportMembersCSV() {
   if (cachedMembers.length === 0) {
-    alert('No members to export.');
+    showToast('لا يوجد أعضاء للتصدير.', 'warning');
     return;
   }
   const headers = ['Member ID', 'Full Name', 'Student ID', 'Email', 'Phone', 'Department', 'Year', 'Level', 'Codeforces', 'Status', 'Joined Date'];

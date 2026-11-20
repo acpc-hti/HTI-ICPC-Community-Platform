@@ -17,7 +17,9 @@ let db = {
   AccessTokens: [],
   StatusHistory: [],
   AdminActivityLogs: [],
-  EmailLogs: []
+  EmailLogs: [],
+  Events: [],
+  TrainingSessions: []
 };
 
 let passed = 0;
@@ -367,6 +369,63 @@ function clearLogs(callerAdmin) {
 
 clearLogs(db.Admins[0]);
 assert(db.AdminActivityLogs.length === 0, 'Super Admin successfully cleared audit activity logs (fresh launch from zero)');
+
+// 8. Events & Trainings Management (Complete to Hide & Delete)
+console.log('\nTest Suite 8: Events & Training Management (Complete to Hide & Delete)');
+
+// Add Event
+const newEvent = {
+  eventId: 'EVT-TEST-001',
+  title: 'HTI Local Contest 2026',
+  type: 'Contest',
+  startDate: new Date().toISOString(),
+  location: 'Lab 304',
+  status: 'Upcoming'
+};
+db.Events.push(newEvent);
+
+// Add Training
+const newTraining = {
+  sessionId: 'TRN-TEST-001',
+  title: 'Advanced Dynamic Programming',
+  level: 'Level 2',
+  instructor: 'Admin',
+  dateTime: new Date().toISOString(),
+  location: 'Lab 302',
+  status: 'Upcoming'
+};
+db.TrainingSessions.push(newTraining);
+
+assert(db.Events.some(e => e.eventId === 'EVT-TEST-001'), 'Event created successfully');
+assert(db.TrainingSessions.some(t => t.sessionId === 'TRN-TEST-001'), 'Training session created successfully');
+
+// Verify appearing in public data
+let publicEvents = db.Events.filter(e => e.status !== 'Past');
+let publicTrainings = db.TrainingSessions.filter(t => t.status === 'Upcoming');
+assert(publicEvents.some(e => e.eventId === 'EVT-TEST-001'), 'Active event appears in public events');
+assert(publicTrainings.some(t => t.sessionId === 'TRN-TEST-001'), 'Active training session appears in public trainings');
+
+// Mark Event as Completed (Past)
+const targetEv = db.Events.find(e => e.eventId === 'EVT-TEST-001');
+targetEv.status = 'Past';
+publicEvents = db.Events.filter(e => e.status !== 'Past');
+assert(!publicEvents.some(e => e.eventId === 'EVT-TEST-001'), 'Completed event is hidden from public view');
+
+// Mark Training as Completed
+const targetTrn = db.TrainingSessions.find(t => t.sessionId === 'TRN-TEST-001');
+targetTrn.status = 'Completed';
+publicTrainings = db.TrainingSessions.filter(t => t.status === 'Upcoming');
+assert(!publicTrainings.some(t => t.sessionId === 'TRN-TEST-001'), 'Completed training is hidden from public view');
+
+// Delete Event
+const evIdx = db.Events.findIndex(e => e.eventId === 'EVT-TEST-001');
+db.Events.splice(evIdx, 1);
+assert(!db.Events.some(e => e.eventId === 'EVT-TEST-001'), 'Event deleted permanently from database');
+
+// Delete Training
+const trnIdx = db.TrainingSessions.findIndex(t => t.sessionId === 'TRN-TEST-001');
+db.TrainingSessions.splice(trnIdx, 1);
+assert(!db.TrainingSessions.some(t => t.sessionId === 'TRN-TEST-001'), 'Training session deleted permanently from database');
 
 console.log('\n======================================================');
 console.log(`  TEST RESULTS: ${passed} PASSED, ${failed} FAILED  `);

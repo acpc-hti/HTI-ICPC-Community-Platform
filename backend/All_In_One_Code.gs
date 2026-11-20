@@ -2101,11 +2101,43 @@ function doPost(e) {
       return Utils.successResponse(res, 'Event created successfully');
     }
 
+    if (action === 'delete_event') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.deleteEvent(admin, payload.eventId);
+      return Utils.successResponse(res, 'Event deleted successfully');
+    }
+
+    if (action === 'complete_event') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.updateEvent(admin, payload.eventId, { status: 'Past' });
+      return Utils.successResponse(res, 'Event marked as past successfully');
+    }
+
     // 9. Training Management
     if (action === 'create_training') {
       const admin = Auth.validateAdminSession(payload.token);
       const res = EventsService.createTraining(admin, payload);
       return Utils.successResponse(res, 'Training session created successfully');
+    }
+
+    if (action === 'delete_training') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.deleteTraining(admin, payload.sessionId);
+      return Utils.successResponse(res, 'Training session deleted successfully');
+    }
+
+    if (action === 'complete_training') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.updateTraining(admin, payload.sessionId, { status: 'Completed' });
+      return Utils.successResponse(res, 'Training session marked as completed successfully');
+    }
+
+    if (action === 'admin_events_trainings') {
+      const admin = Auth.validateAdminSession(payload.token);
+      return Utils.successResponse({
+        trainings: EventsService.listTrainings(),
+        events: EventsService.listEvents()
+      }, 'Events and trainings retrieved successfully');
     }
 
     // 10. Announcement Management
