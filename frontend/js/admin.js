@@ -766,14 +766,17 @@ async function toggleMemberActive(memberId, newStatus) {
   }
 }
 
-// ================= TAB 4: EVENTS & TRAININGS =================
+// ================= TAB 4: EVENTS, TRAININGS & ANNOUNCEMENTS =================
 let cachedAdminTrainings = [];
 let cachedAdminEvents = [];
+let cachedAdminAnnouncements = [];
 
 function renderEventsAndTrainingsUI() {
   const trainContainer = document.getElementById('admin-trainings-list');
   const evContainer = document.getElementById('admin-events-list');
+  const annContainer = document.getElementById('admin-announcements-list');
 
+  // 1. Render Trainings
   if (trainContainer) {
     if (!cachedAdminTrainings || cachedAdminTrainings.length === 0) {
       trainContainer.innerHTML = '<p class="text-muted small p-3">لا توجد سيشنات تدريبية مضافة حالياً.</p>';
@@ -781,12 +784,12 @@ function renderEventsAndTrainingsUI() {
       trainContainer.innerHTML = cachedAdminTrainings.map(t => {
         const isCompleted = t.status === 'Completed';
         const statusBadge = isCompleted
-          ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-circle-check ms-1"></i>مكتملة (مخفية)</span>`
-          : `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-30"><i class="fa-solid fa-clock ms-1"></i>قادمة (نشطة)</span>`;
+          ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-circle-check ms-1"></i>مكتملة</span>`
+          : `<span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-30"><i class="fa-solid fa-clock ms-1"></i>قادمة</span>`;
 
         const completeBtn = !isCompleted
-          ? `<button class="btn btn-sm btn-outline-success" onclick="completeTrainingAction('${t.sessionId}')" title="تحديد كـ مكتملة وإخفائها من الطلاب">
-               <i class="fa-solid fa-check ms-1"></i>إنهاء
+          ? `<button class="btn btn-sm btn-outline-success" onclick="completeTrainingAction('${t.sessionId}')" title="إنهاء السيشن وإخفائها">
+               <i class="fa-solid fa-check"></i>
              </button>`
           : '';
 
@@ -802,12 +805,15 @@ function renderEventsAndTrainingsUI() {
             <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(t.title)}</h5>
             <div class="small text-light text-opacity-80 d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
               <div>
-                <span class="me-3"><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> ${escapeHtml(t.instructor)}</span>
-                <span class="location-badge"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(t.location)}</span>
+                <span class="me-2"><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> ${escapeHtml(t.instructor)}</span>
+                <span class="location-badge"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(t.location || 'HTI')}</span>
               </div>
               <div class="d-flex gap-1">
                 ${completeBtn}
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteTrainingAction('${t.sessionId}')" title="حذف السيشن التدريبية نهائياً">
+                <button class="btn btn-sm btn-outline-warning" onclick="openEditTrainingModal('${t.sessionId}')" title="تعديل السيشن">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteTrainingAction('${t.sessionId}')" title="حذف السيشن نهائياً">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
@@ -818,6 +824,7 @@ function renderEventsAndTrainingsUI() {
     }
   }
 
+  // 2. Render Events / Contests
   if (evContainer) {
     if (!cachedAdminEvents || cachedAdminEvents.length === 0) {
       evContainer.innerHTML = '<p class="text-muted small p-3">لا توجد مسابقات مضافة حالياً.</p>';
@@ -825,12 +832,12 @@ function renderEventsAndTrainingsUI() {
       evContainer.innerHTML = cachedAdminEvents.map(ev => {
         const isPast = ev.status === 'Past';
         const statusBadge = isPast
-          ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-flag-checkered ms-1"></i>انتهت (مخفية)</span>`
-          : `<span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30"><i class="fa-solid fa-bolt ms-1"></i>قادمة (نشطة)</span>`;
+          ? `<span class="badge bg-secondary bg-opacity-50 text-light border border-secondary border-opacity-50"><i class="fa-solid fa-flag-checkered ms-1"></i>انتهت</span>`
+          : `<span class="badge bg-warning bg-opacity-25 text-warning border border-warning border-opacity-30"><i class="fa-solid fa-bolt ms-1"></i>قادمة</span>`;
 
         const completeBtn = !isPast
-          ? `<button class="btn btn-sm btn-outline-success" onclick="completeEventAction('${ev.eventId}')" title="تحديد كـ انتهت وإخفائها من الموقع">
-               <i class="fa-solid fa-flag-checkered ms-1"></i>إنهاء المسابقة
+          ? `<button class="btn btn-sm btn-outline-success" onclick="completeEventAction('${ev.eventId}')" title="إنهاء المسابقة">
+               <i class="fa-solid fa-flag-checkered"></i>
              </button>`
           : '';
 
@@ -848,7 +855,50 @@ function renderEventsAndTrainingsUI() {
               <span class="location-badge-event"><i class="fa-solid fa-location-dot ms-1"></i> ${escapeHtml(ev.location)}</span>
               <div class="d-flex gap-1">
                 ${completeBtn}
+                <button class="btn btn-sm btn-outline-warning" onclick="openEditEventModal('${ev.eventId}')" title="تعديل المسابقة">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteEventAction('${ev.eventId}')" title="حذف المسابقة نهائياً">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 3. Render Announcements
+  if (annContainer) {
+    if (!cachedAdminAnnouncements || cachedAdminAnnouncements.length === 0) {
+      annContainer.innerHTML = '<p class="text-muted small p-3">لا توجد إعلانات منشورة حالياً.</p>';
+    } else {
+      annContainer.innerHTML = cachedAdminAnnouncements.map(ann => {
+        const isAct = ann.isActive !== false && ann.isActive !== 'FALSE';
+        const catBadge = `<span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-30">${escapeHtml(ann.category || 'General')}</span>`;
+        const activeBadge = isAct
+          ? `<span class="badge bg-success bg-opacity-25 text-success"><i class="fa-solid fa-eye ms-1"></i>ظاهر</span>`
+          : `<span class="badge bg-secondary bg-opacity-50 text-light"><i class="fa-solid fa-eye-slash ms-1"></i>مخفي</span>`;
+
+        return `
+          <div class="dashboard-item-card mb-2 ${isAct ? '' : 'opacity-75'}">
+            <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+              <div class="d-flex align-items-center gap-1">
+                ${catBadge}
+                ${activeBadge}
+              </div>
+              <span class="small text-light text-opacity-75">${new Date(ann.publishedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+            </div>
+            <h5 class="h6 text-white fw-bold mb-1">${escapeHtml(ann.title)}</h5>
+            <p class="text-secondary small mb-2 text-truncate">${escapeHtml(ann.content || '')}</p>
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light border-opacity-10 flex-wrap gap-2">
+              <span class="small text-muted"><i class="fa-solid fa-user-pen ms-1"></i>${escapeHtml(ann.publishedBy || 'Admin')}</span>
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-warning" onclick="openEditAnnouncementModal('${ann.announcementId}')" title="تعديل الإعلان">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncementAction('${ann.announcementId}')" title="حذف الإعلان نهائياً">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
@@ -871,6 +921,7 @@ async function loadEventsAndTrainings() {
 
     cachedAdminTrainings = data.trainings || [];
     cachedAdminEvents = data.events || [];
+    cachedAdminAnnouncements = data.announcements || [];
     renderEventsAndTrainingsUI();
 
   } catch (err) {
@@ -878,6 +929,73 @@ async function loadEventsAndTrainings() {
   }
 }
 
+// ================= MODAL OPENERS FOR EDITING =================
+function openEditTrainingModal(sessionId) {
+  const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
+  if (!t) return;
+
+  document.getElementById('editTrainId').value = t.sessionId;
+  document.getElementById('editTrainTitle').value = t.title || '';
+  document.getElementById('editTrainLevel').value = t.level || 'Level 0';
+  document.getElementById('editTrainInstructor').value = t.instructor || '';
+
+  // Format datetime-local string (YYYY-MM-DDTHH:mm)
+  if (t.dateTime) {
+    const d = new Date(t.dateTime);
+    const pad = n => String(n).padStart(2, '0');
+    const dStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    document.getElementById('editTrainDateTime').value = dStr;
+  }
+  document.getElementById('editTrainLocation').value = t.location || '';
+  document.getElementById('editTrainStatus').value = t.status || 'Upcoming';
+  document.getElementById('editTrainDesc').value = t.description || '';
+
+  const modal = new bootstrap.Modal(document.getElementById('editTrainingModal'));
+  modal.show();
+}
+
+function openEditEventModal(eventId) {
+  const ev = cachedAdminEvents.find(x => x.eventId === eventId);
+  if (!ev) return;
+
+  document.getElementById('editEvId').value = ev.eventId;
+  document.getElementById('editEvTitle').value = ev.title || '';
+  document.getElementById('editEvType').value = ev.type || 'Contest';
+  document.getElementById('editEvLocation').value = ev.location || '';
+
+  const pad = n => String(n).padStart(2, '0');
+  if (ev.startDate) {
+    const d = new Date(ev.startDate);
+    document.getElementById('editEvStart').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  if (ev.endDate) {
+    const d = new Date(ev.endDate);
+    document.getElementById('editEvEnd').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  document.getElementById('editEvStatus').value = ev.status || 'Upcoming';
+  document.getElementById('editEvLink').value = ev.registrationLink || '';
+  document.getElementById('editEvDesc').value = ev.description || '';
+
+  const modal = new bootstrap.Modal(document.getElementById('editEventModal'));
+  modal.show();
+}
+
+function openEditAnnouncementModal(announcementId) {
+  const ann = cachedAdminAnnouncements.find(x => x.announcementId === announcementId);
+  if (!ann) return;
+
+  document.getElementById('editAnnId').value = ann.announcementId;
+  document.getElementById('editAnnTitle').value = ann.title || '';
+  document.getElementById('editAnnCategory').value = ann.category || 'General';
+  document.getElementById('editAnnAudience').value = ann.targetAudience || 'ALL';
+  document.getElementById('editAnnIsActive').checked = ann.isActive !== false && ann.isActive !== 'FALSE';
+  document.getElementById('editAnnContent').value = ann.content || '';
+
+  const modal = new bootstrap.Modal(document.getElementById('editAnnouncementModal'));
+  modal.show();
+}
+
+// ================= TRAINING ACTIONS =================
 async function deleteTrainingAction(sessionId) {
   const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
   const title = t ? t.title : sessionId;
@@ -914,6 +1032,7 @@ async function completeTrainingAction(sessionId) {
   }
 }
 
+// ================= EVENT ACTIONS =================
 async function deleteEventAction(eventId) {
   const ev = cachedAdminEvents.find(x => x.eventId === eventId);
   const title = ev ? ev.title : eventId;
@@ -946,6 +1065,25 @@ async function completeEventAction(eventId) {
     await ApiService.completeEvent(eventId);
   } catch (err) {
     showToast('⚠️ فشل تحديث حالة المسابقة على الخادم: ' + err.message, 'error');
+    loadEventsAndTrainings();
+  }
+}
+
+// ================= ANNOUNCEMENT ACTIONS =================
+async function deleteAnnouncementAction(announcementId) {
+  const ann = cachedAdminAnnouncements.find(x => x.announcementId === announcementId);
+  const title = ann ? ann.title : announcementId;
+  if (!confirm(`هل أنت متأكد من حذف الإعلان "${title}" نهائياً؟`)) return;
+
+  // Instant Optimistic Update (0ms)
+  cachedAdminAnnouncements = cachedAdminAnnouncements.filter(x => x.announcementId !== announcementId);
+  renderEventsAndTrainingsUI();
+  showToast(`تم حذف الإعلان "${title}" بنجاح 🗑️`, 'success');
+
+  try {
+    await ApiService.deleteAnnouncement(announcementId);
+  } catch (err) {
+    showToast('⚠️ فشل حذف الإعلان على الخادم: ' + err.message, 'error');
     loadEventsAndTrainings();
   }
 }
@@ -1139,6 +1277,135 @@ function setupModalsAndForms() {
         loadEventsAndTrainings();
       } catch (err) {
         showToast('فشل نشر الحدث: ' + err.message, 'error');
+      }
+    });
+  }
+
+  // Edit Training Form
+  const editTrainForm = document.getElementById('edit-training-form');
+  if (editTrainForm) {
+    editTrainForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const sessionId = document.getElementById('editTrainId').value;
+      const data = {
+        title: document.getElementById('editTrainTitle').value.trim(),
+        level: document.getElementById('editTrainLevel').value,
+        instructor: document.getElementById('editTrainInstructor').value.trim(),
+        dateTime: new Date(document.getElementById('editTrainDateTime').value).toISOString(),
+        location: document.getElementById('editTrainLocation').value.trim(),
+        status: document.getElementById('editTrainStatus').value,
+        description: document.getElementById('editTrainDesc').value.trim()
+      };
+
+      // 0ms Optimistic UI update
+      const t = cachedAdminTrainings.find(x => x.sessionId === sessionId);
+      if (t) Object.assign(t, data);
+      renderEventsAndTrainingsUI();
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editTrainingModal'));
+      if (modal) modal.hide();
+      showToast(`تم تعديل السيشن "${data.title}" بنجاح ✏️`, 'success');
+
+      try {
+        await ApiService.updateTraining(sessionId, data);
+      } catch (err) {
+        showToast('⚠️ فشل حفظ تعديل السيشن على الخادم: ' + err.message, 'error');
+        loadEventsAndTrainings();
+      }
+    });
+  }
+
+  // Edit Event Form
+  const editEvForm = document.getElementById('edit-event-form');
+  if (editEvForm) {
+    editEvForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const eventId = document.getElementById('editEvId').value;
+      const data = {
+        title: document.getElementById('editEvTitle').value.trim(),
+        type: document.getElementById('editEvType').value,
+        location: document.getElementById('editEvLocation').value.trim(),
+        startDate: new Date(document.getElementById('editEvStart').value).toISOString(),
+        endDate: new Date(document.getElementById('editEvEnd').value).toISOString(),
+        status: document.getElementById('editEvStatus').value,
+        registrationLink: document.getElementById('editEvLink').value.trim(),
+        description: document.getElementById('editEvDesc').value.trim()
+      };
+
+      // 0ms Optimistic UI update
+      const ev = cachedAdminEvents.find(x => x.eventId === eventId);
+      if (ev) Object.assign(ev, data);
+      renderEventsAndTrainingsUI();
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+      if (modal) modal.hide();
+      showToast(`تم تعديل المسابقة "${data.title}" بنجاح ✏️`, 'success');
+
+      try {
+        await ApiService.updateEvent(eventId, data);
+      } catch (err) {
+        showToast('⚠️ فشل حفظ تعديل المسابقة على الخادم: ' + err.message, 'error');
+        loadEventsAndTrainings();
+      }
+    });
+  }
+
+  // Create Announcement Form
+  const createAnnForm = document.getElementById('create-announcement-form');
+  if (createAnnForm) {
+    createAnnForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('annTitle').value.trim(),
+        category: document.getElementById('annCategory').value,
+        targetAudience: document.getElementById('annAudience').value,
+        content: document.getElementById('annContent').value.trim()
+      };
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('newAnnouncementModal'));
+      if (modal) modal.hide();
+      createAnnForm.reset();
+      showToast(`تم نشر الإعلان "${data.title}" بنجاح 📢`, 'success');
+
+      try {
+        const newAnn = await ApiService.createAnnouncement(data);
+        cachedAdminAnnouncements.unshift(newAnn);
+        renderEventsAndTrainingsUI();
+      } catch (err) {
+        showToast('فشل نشر الإعلان: ' + err.message, 'error');
+        loadEventsAndTrainings();
+      }
+    });
+  }
+
+  // Edit Announcement Form
+  const editAnnForm = document.getElementById('edit-announcement-form');
+  if (editAnnForm) {
+    editAnnForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const announcementId = document.getElementById('editAnnId').value;
+      const data = {
+        title: document.getElementById('editAnnTitle').value.trim(),
+        category: document.getElementById('editAnnCategory').value,
+        targetAudience: document.getElementById('editAnnAudience').value,
+        isActive: document.getElementById('editAnnIsActive').checked,
+        content: document.getElementById('editAnnContent').value.trim()
+      };
+
+      // 0ms Optimistic UI update
+      const ann = cachedAdminAnnouncements.find(x => x.announcementId === announcementId);
+      if (ann) Object.assign(ann, data);
+      renderEventsAndTrainingsUI();
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editAnnouncementModal'));
+      if (modal) modal.hide();
+      showToast(`تم تعديل الإعلان "${data.title}" بنجاح ✏️`, 'success');
+
+      try {
+        await ApiService.updateAnnouncement(announcementId, data);
+      } catch (err) {
+        showToast('⚠️ فشل حفظ تعديل الإعلان على الخادم: ' + err.message, 'error');
+        loadEventsAndTrainings();
       }
     });
   }

@@ -562,32 +562,43 @@
       <section id="tab-events" class="admin-tab-pane d-none">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <div>
-            <h2 class="h3 fw-bold text-white mb-1">إدارة المسابقات والسيشنات – Events & Training Hub</h2>
-            <p class="text-secondary small mb-0">نشر السيشنات الأسبوعية، المسابقات التنافسية، والإعلانات الرسمية.</p>
+            <h2 class="h3 fw-bold text-white mb-1">إدارة المحتوى والمسابقات والتدريب – Content Hub</h2>
+            <p class="text-secondary small mb-0">نشر وتعديل وحذف السيشنات الأسبوعية، المسابقات التنافسية، والإعلانات الرسمية.</p>
           </div>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 flex-wrap">
             <button class="btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newTrainingModal">
               <i class="fa-solid fa-plus ms-1"></i> سيشن تدريبية جديدة
             </button>
             <button class="btn-secondary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#newEventModal">
               <i class="fa-solid fa-trophy ms-1"></i> مسابقة جديدة
             </button>
+            <button class="btn btn-sm btn-info text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#newAnnouncementModal">
+              <i class="fa-solid fa-bullhorn ms-1"></i> إعلان جديد
+            </button>
           </div>
         </div>
 
         <div class="row g-4">
-          <div class="col-lg-6">
-            <div class="custom-card">
-              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-chalkboard-user text-primary ms-2"></i> جدول السيشنات المقررة – Training Sessions</h3>
+          <div class="col-lg-4">
+            <div class="custom-card h-100">
+              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-chalkboard-user text-primary ms-2"></i> السيشنات التدريبية – Sessions</h3>
               <div id="admin-trainings-list" class="vstack gap-2">
                 <!-- Injected via JS -->
               </div>
             </div>
           </div>
-          <div class="col-lg-6">
-            <div class="custom-card">
-              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-trophy text-warning ms-2"></i> المسابقات المقررة – Scheduled Contests</h3>
+          <div class="col-lg-4">
+            <div class="custom-card h-100">
+              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-trophy text-warning ms-2"></i> المسابقات المقررة – Contests</h3>
               <div id="admin-events-list" class="vstack gap-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="custom-card h-100">
+              <h3 class="h5 fw-bold text-white mb-3"><i class="fa-solid fa-bullhorn text-info ms-2"></i> الأخبار والإعلانات – Announcements</h3>
+              <div id="admin-announcements-list" class="vstack gap-2">
                 <!-- Injected via JS -->
               </div>
             </div>
@@ -1040,6 +1051,231 @@
   </div>
 
 
+
+  <!-- EDIT TRAINING MODAL -->
+  <div class="modal fade" id="editTrainingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white"><i class="fa-solid fa-pen-to-square ms-2 text-warning"></i>تعديل السيشن التدريبية – Edit Training</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="edit-training-form">
+          <input type="hidden" id="editTrainId">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">عنوان السيشن – Title</label>
+              <input type="text" class="form-control" id="editTrainTitle" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">المستوى – Level</label>
+                <select class="form-select" id="editTrainLevel">
+                  <option value="Level 0">Level 0</option>
+                  <option value="Level 1">Level 1</option>
+                  <option value="Level 2">Level 2</option>
+                  <option value="Elite">Elite</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">المدرب – Instructor</label>
+                <input type="text" class="form-control" id="editTrainInstructor" required>
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">الموعد – Date & Time</label>
+                <input type="datetime-local" class="form-control ltr-input" id="editTrainDateTime" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">المكان – Location</label>
+                <input type="text" class="form-control" id="editTrainLocation">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">حالة السيشن – Status</label>
+              <select class="form-select" id="editTrainStatus">
+                <option value="Upcoming">قادمة (نشطة) – Upcoming</option>
+                <option value="Completed">مكتملة (مخفية) – Completed</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">وصف السيشن – Description</label>
+              <textarea class="form-control" id="editTrainDesc" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn btn-warning text-dark fw-bold"><i class="fa-solid fa-floppy-disk ms-1"></i>حفظ التعديلات</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT EVENT MODAL -->
+  <div class="modal fade" id="editEventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white"><i class="fa-solid fa-pen-to-square ms-2 text-warning"></i>تعديل المسابقة – Edit Contest / Event</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="edit-event-form">
+          <input type="hidden" id="editEvId">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">اسم المسابقة – Title</label>
+              <input type="text" class="form-control" id="editEvTitle" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">النوع – Type</label>
+                <select class="form-select" id="editEvType">
+                  <option value="Contest">Contest – مسابقة</option>
+                  <option value="Bootcamp">Bootcamp – معسكر</option>
+                  <option value="Workshop">Workshop – ورشة عمل</option>
+                  <option value="ICPC Qualification">ICPC Qualification – تصفيات</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">المكان / المنصة – Platform</label>
+                <input type="text" class="form-control" id="editEvLocation">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">بداية المسابقة – Start</label>
+                <input type="datetime-local" class="form-control ltr-input" id="editEvStart" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">نهاية المسابقة – End</label>
+                <input type="datetime-local" class="form-control ltr-input" id="editEvEnd" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">حالة المسابقة – Status</label>
+              <select class="form-select" id="editEvStatus">
+                <option value="Upcoming">قادمة (نشطة) – Upcoming</option>
+                <option value="Past">انتهت (مخفية) – Past</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">رابط التسجيل / المسابقة – Link</label>
+              <input type="text" class="form-control ltr-input" id="editEvLink" placeholder="https://codeforces.com/gym/...">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">تفاصيل المسابقة – Description</label>
+              <textarea class="form-control" id="editEvDesc" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn btn-warning text-dark fw-bold"><i class="fa-solid fa-floppy-disk ms-1"></i>حفظ التعديلات</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE NEW ANNOUNCEMENT MODAL -->
+  <div class="modal fade" id="newAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white"><i class="fa-solid fa-bullhorn ms-2 text-info"></i>إضافة إعلان جديد – New Announcement</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="create-announcement-form">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">عنوان الإعلان – Title</label>
+              <input type="text" class="form-control" id="annTitle" placeholder="مثال: فتح باب التسجيل لمسابقة HTI Local Contest" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">التصنيف – Category</label>
+                <select class="form-select" id="annCategory">
+                  <option value="General" selected>عام – General</option>
+                  <option value="Contest">مسابقات – Contest</option>
+                  <option value="Training">تدريب – Training</option>
+                  <option value="Important">تنبيه هام – Important</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">الجمهور المستهدف – Audience</label>
+                <select class="form-select" id="annAudience">
+                  <option value="ALL" selected>الجميع (عام في الموقع)</option>
+                  <option value="MEMBERS_ONLY">للأعضاء المقبولين فقط</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">نص ومحتوى الإعلان – Content</label>
+              <textarea class="form-control" id="annContent" rows="4" placeholder="اكتب تفاصيل الإعلان هنا..." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn-primary-custom"><i class="fa-solid fa-paper-plane ms-1"></i>نشر الإعلان</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT ANNOUNCEMENT MODAL -->
+  <div class="modal fade" id="editAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <div class="modal-header modal-header-custom">
+          <h5 class="modal-title text-white"><i class="fa-solid fa-pen-to-square ms-2 text-warning"></i>تعديل الإعلان – Edit Announcement</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="edit-announcement-form">
+          <input type="hidden" id="editAnnId">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label">عنوان الإعلان – Title</label>
+              <input type="text" class="form-control" id="editAnnTitle" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label">التصنيف – Category</label>
+                <select class="form-select" id="editAnnCategory">
+                  <option value="General">عام – General</option>
+                  <option value="Contest">مسابقات – Contest</option>
+                  <option value="Training">تدريب – Training</option>
+                  <option value="Important">تنبيه هام – Important</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label">الجمهور المستهدف – Audience</label>
+                <select class="form-select" id="editAnnAudience">
+                  <option value="ALL">الجميع (عام في الموقع)</option>
+                  <option value="MEMBERS_ONLY">للأعضاء المقبولين فقط</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="editAnnIsActive" checked>
+                <label class="form-check-label text-light" for="editAnnIsActive">الإعلان نشط ويظهر في الموقع</label>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">نص ومحتوى الإعلان – Content</label>
+              <textarea class="form-control" id="editAnnContent" rows="4" required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer modal-footer-custom">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="submit" class="btn btn-warning text-dark fw-bold"><i class="fa-solid fa-floppy-disk ms-1"></i>حفظ التعديلات</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Notification Container -->
   <div class="toast-container-custom" id="toastContainer"></div>

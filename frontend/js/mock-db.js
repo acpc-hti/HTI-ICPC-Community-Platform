@@ -1040,12 +1040,148 @@ const MockDB = (function() {
       return { success: true, sessionId };
     },
 
-    // Get ALL events & trainings for admin (including completed/past)
+    // Update Event
+    updateEvent: async function(adminUser, eventId, data) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const ev = db.Events.find(e => e.eventId === eventId);
+      if (!ev) throw new Error('Event not found.');
+      if (data.title) ev.title = data.title;
+      if (data.type) ev.type = data.type;
+      if (data.startDate) ev.startDate = data.startDate;
+      if (data.endDate) ev.endDate = data.endDate;
+      if (data.location !== undefined) ev.location = data.location;
+      if (data.registrationLink !== undefined) ev.registrationLink = data.registrationLink;
+      if (data.description !== undefined) ev.description = data.description;
+      if (data.status) ev.status = data.status;
+
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'UPDATE_EVENT',
+        targetEntity: 'Event',
+        targetId: eventId,
+        details: `Updated event: ${ev.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return ev;
+    },
+
+    // Update Training
+    updateTraining: async function(adminUser, sessionId, data) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const trn = db.TrainingSessions.find(t => t.sessionId === sessionId);
+      if (!trn) throw new Error('Training session not found.');
+      if (data.title) trn.title = data.title;
+      if (data.level) trn.level = data.level;
+      if (data.instructor) trn.instructor = data.instructor;
+      if (data.dateTime) trn.dateTime = data.dateTime;
+      if (data.location !== undefined) trn.location = data.location;
+      if (data.description !== undefined) trn.description = data.description;
+      if (data.materialsUrl !== undefined) trn.materialsUrl = data.materialsUrl;
+      if (data.status) trn.status = data.status;
+
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'UPDATE_TRAINING',
+        targetEntity: 'Training',
+        targetId: sessionId,
+        details: `Updated training: ${trn.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return trn;
+    },
+
+    // Create Announcement
+    createAnnouncement: async function(adminUser, data) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const id = generatePrefixedId('ANN');
+      const ann = {
+        announcementId: id,
+        title: data.title,
+        category: data.category || 'General',
+        content: data.content,
+        targetAudience: data.targetAudience || 'ALL',
+        publishedBy: adminUser.fullName,
+        publishedAt: new Date().toISOString(),
+        isActive: true
+      };
+      db.Announcements.unshift(ann);
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'CREATE_ANNOUNCEMENT',
+        targetEntity: 'Announcement',
+        targetId: id,
+        details: `Published announcement: ${ann.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return ann;
+    },
+
+    // Update Announcement
+    updateAnnouncement: async function(adminUser, announcementId, data) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const ann = db.Announcements.find(a => a.announcementId === announcementId);
+      if (!ann) throw new Error('Announcement not found.');
+      if (data.title) ann.title = data.title;
+      if (data.category) ann.category = data.category;
+      if (data.content) ann.content = data.content;
+      if (data.targetAudience) ann.targetAudience = data.targetAudience;
+      if (data.isActive !== undefined) ann.isActive = Boolean(data.isActive);
+
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'UPDATE_ANNOUNCEMENT',
+        targetEntity: 'Announcement',
+        targetId: announcementId,
+        details: `Updated announcement: ${ann.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return ann;
+    },
+
+    // Delete Announcement
+    deleteAnnouncement: async function(adminUser, announcementId) {
+      if (!['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) throw new Error('Forbidden');
+      const db = getDB();
+      const idx = db.Announcements.findIndex(a => a.announcementId === announcementId);
+      if (idx === -1) throw new Error('Announcement not found.');
+      const removed = db.Announcements.splice(idx, 1)[0];
+      db.AdminActivityLogs.unshift({
+        logId: generateUUID(),
+        adminId: adminUser.adminId,
+        adminName: adminUser.fullName,
+        actionType: 'DELETE_ANNOUNCEMENT',
+        targetEntity: 'Announcement',
+        targetId: announcementId,
+        details: `Deleted announcement: ${removed.title}`,
+        timestamp: new Date().toISOString()
+      });
+      saveDB(db);
+      return { success: true, announcementId };
+    },
+
+    // Get ALL events, trainings & announcements for admin
     getAdminEventsAndTrainings: async function() {
       const db = getDB();
       return {
         trainings: db.TrainingSessions,
-        events: db.Events
+        events: db.Events,
+        announcements: db.Announcements
       };
     },
 

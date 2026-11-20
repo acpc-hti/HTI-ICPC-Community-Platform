@@ -393,6 +393,12 @@ function doPost(e) {
       return Utils.successResponse(res, 'Event created successfully');
     }
 
+    if (action === 'update_event') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.updateEvent(admin, payload.eventId, payload);
+      return Utils.successResponse(res, 'Event updated successfully');
+    }
+
     if (action === 'delete_event') {
       const admin = Auth.validateAdminSession(payload.token);
       const res = EventsService.deleteEvent(admin, payload.eventId);
@@ -412,6 +418,12 @@ function doPost(e) {
       return Utils.successResponse(res, 'Training session created successfully');
     }
 
+    if (action === 'update_training') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.updateTraining(admin, payload.sessionId, payload);
+      return Utils.successResponse(res, 'Training session updated successfully');
+    }
+
     if (action === 'delete_training') {
       const admin = Auth.validateAdminSession(payload.token);
       const res = EventsService.deleteTraining(admin, payload.sessionId);
@@ -428,8 +440,9 @@ function doPost(e) {
       const admin = Auth.validateAdminSession(payload.token);
       return Utils.successResponse({
         trainings: EventsService.listTrainings(),
-        events: EventsService.listEvents()
-      }, 'Events and trainings retrieved successfully');
+        events: EventsService.listEvents(),
+        announcements: EventsService.listAnnouncements(false)
+      }, 'Events, trainings and announcements retrieved successfully');
     }
 
     // 10. Announcement Management
@@ -437,6 +450,18 @@ function doPost(e) {
       const admin = Auth.validateAdminSession(payload.token);
       const res = EventsService.createAnnouncement(admin, payload);
       return Utils.successResponse(res, 'Announcement created successfully');
+    }
+
+    if (action === 'update_announcement') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.updateAnnouncement(admin, payload.announcementId, payload);
+      return Utils.successResponse(res, 'Announcement updated successfully');
+    }
+
+    if (action === 'delete_announcement') {
+      const admin = Auth.validateAdminSession(payload.token);
+      const res = EventsService.deleteAnnouncement(admin, payload.announcementId);
+      return Utils.successResponse(res, 'Announcement deleted successfully');
     }
 
     // 11. Student Member Self Profile Update

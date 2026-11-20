@@ -322,6 +322,15 @@ const ApiService = (function() {
       return await postGAS({ action: 'create_event', token: sess.token, ...data });
     },
 
+    updateEvent: async function(eventId, data) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.updateEvent(sess.admin, eventId, data);
+      }
+      return await postGAS({ action: 'update_event', token: sess.token, eventId, ...data });
+    },
+
     createTraining: async function(data) {
       const sess = this.getAdminSession();
       if (!sess) throw new Error('Unauthenticated');
@@ -329,6 +338,15 @@ const ApiService = (function() {
         return await MockDB.createTraining(sess.admin, data);
       }
       return await postGAS({ action: 'create_training', token: sess.token, ...data });
+    },
+
+    updateTraining: async function(sessionId, data) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.updateTraining(sess.admin, sessionId, data);
+      }
+      return await postGAS({ action: 'update_training', token: sess.token, sessionId, ...data });
     },
 
     deleteEvent: async function(eventId) {
@@ -365,6 +383,34 @@ const ApiService = (function() {
         return await MockDB.completeTraining(sess.admin, sessionId);
       }
       return await postGAS({ action: 'complete_training', token: sess.token, sessionId });
+    },
+
+    // ================= ANNOUNCEMENTS =================
+    createAnnouncement: async function(data) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.createAnnouncement(sess.admin, data);
+      }
+      return await postGAS({ action: 'create_announcement', token: sess.token, ...data });
+    },
+
+    updateAnnouncement: async function(announcementId, data) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.updateAnnouncement(sess.admin, announcementId, data);
+      }
+      return await postGAS({ action: 'update_announcement', token: sess.token, announcementId, ...data });
+    },
+
+    deleteAnnouncement: async function(announcementId) {
+      const sess = this.getAdminSession();
+      if (!sess) throw new Error('Unauthenticated');
+      if (isMockMode()) {
+        return await MockDB.deleteAnnouncement(sess.admin, announcementId);
+      }
+      return await postGAS({ action: 'delete_announcement', token: sess.token, announcementId });
     },
 
     getAdminEventsAndTrainings: async function() {

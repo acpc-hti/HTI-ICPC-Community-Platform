@@ -19,7 +19,8 @@ let db = {
   AdminActivityLogs: [],
   EmailLogs: [],
   Events: [],
-  TrainingSessions: []
+  TrainingSessions: [],
+  Announcements: []
 };
 
 let passed = 0;
@@ -405,14 +406,22 @@ let publicTrainings = db.TrainingSessions.filter(t => t.status === 'Upcoming');
 assert(publicEvents.some(e => e.eventId === 'EVT-TEST-001'), 'Active event appears in public events');
 assert(publicTrainings.some(t => t.sessionId === 'TRN-TEST-001'), 'Active training session appears in public trainings');
 
-// Mark Event as Completed (Past)
+// Update Event
 const targetEv = db.Events.find(e => e.eventId === 'EVT-TEST-001');
+targetEv.title = 'HTI Official ECPC Qualifier 2026';
+assert(targetEv.title === 'HTI Official ECPC Qualifier 2026', 'Event successfully updated after creation');
+
+// Update Training
+const targetTrn = db.TrainingSessions.find(t => t.sessionId === 'TRN-TEST-001');
+targetTrn.title = 'Advanced Graph Theory & Network Flow';
+assert(targetTrn.title === 'Advanced Graph Theory & Network Flow', 'Training session successfully updated after creation');
+
+// Mark Event as Completed (Past)
 targetEv.status = 'Past';
 publicEvents = db.Events.filter(e => e.status !== 'Past');
 assert(!publicEvents.some(e => e.eventId === 'EVT-TEST-001'), 'Completed event is hidden from public view');
 
 // Mark Training as Completed
-const targetTrn = db.TrainingSessions.find(t => t.sessionId === 'TRN-TEST-001');
 targetTrn.status = 'Completed';
 publicTrainings = db.TrainingSessions.filter(t => t.status === 'Upcoming');
 assert(!publicTrainings.some(t => t.sessionId === 'TRN-TEST-001'), 'Completed training is hidden from public view');
@@ -426,6 +435,32 @@ assert(!db.Events.some(e => e.eventId === 'EVT-TEST-001'), 'Event deleted perman
 const trnIdx = db.TrainingSessions.findIndex(t => t.sessionId === 'TRN-TEST-001');
 db.TrainingSessions.splice(trnIdx, 1);
 assert(!db.TrainingSessions.some(t => t.sessionId === 'TRN-TEST-001'), 'Training session deleted permanently from database');
+
+// Announcement Lifecycle: Create, Update & Delete
+const newAnn = {
+  announcementId: 'ANN-TEST-001',
+  title: 'Official Contest Registration Opened',
+  category: 'Contest',
+  content: 'Please register before Friday',
+  targetAudience: 'ALL',
+  publishedBy: 'Super Admin',
+  publishedAt: new Date().toISOString(),
+  isActive: true
+};
+db.Announcements.push(newAnn);
+assert(db.Announcements.some(a => a.announcementId === 'ANN-TEST-001'), 'Announcement created successfully');
+
+// Update Announcement
+const targetAnn = db.Announcements.find(a => a.announcementId === 'ANN-TEST-001');
+targetAnn.title = 'UPDATED: Official Contest Registration';
+targetAnn.isActive = false;
+assert(targetAnn.title === 'UPDATED: Official Contest Registration', 'Announcement successfully updated after creation');
+assert(targetAnn.isActive === false, 'Announcement can be deactivated / hidden');
+
+// Delete Announcement
+const annIdx = db.Announcements.findIndex(a => a.announcementId === 'ANN-TEST-001');
+db.Announcements.splice(annIdx, 1);
+assert(!db.Announcements.some(a => a.announcementId === 'ANN-TEST-001'), 'Announcement deleted permanently from database');
 
 console.log('\n======================================================');
 console.log(`  TEST RESULTS: ${passed} PASSED, ${failed} FAILED  `);
