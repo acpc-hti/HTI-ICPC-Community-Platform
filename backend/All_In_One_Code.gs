@@ -218,7 +218,7 @@ const Database = {
     if (!sheet) throw new Error(`Sheet ${tableName} does not exist.`);
 
     const lastRow = sheet.getLastRow();
-    const lastCol = sheet.getLastColumn();
+    let lastCol = sheet.getLastColumn();
     if (lastRow <= 1) return null;
 
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
